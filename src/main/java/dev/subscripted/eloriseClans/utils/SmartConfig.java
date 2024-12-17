@@ -32,6 +32,11 @@ public class SmartConfig {
         this.config = YamlConfiguration.loadConfiguration(file);
     }
 
+    public static SmartConfig load(String fileName) {
+        return new SmartConfig(fileName);
+    }
+
+
     @SneakyThrows
     private boolean isValueEqual(String path, Object value) {
         Object currentValue = config.get(path);
@@ -97,7 +102,7 @@ public class SmartConfig {
         return config.getString(path);
     }
 
-    public int getIntt(String path) {
+    public int getInt(String path) {
         return config.getInt(path);
     }
 

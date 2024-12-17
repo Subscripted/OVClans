@@ -1,6 +1,7 @@
 package dev.subscripted.eloriseClans.database;
 
 import dev.subscripted.eloriseClans.Main;
+import dev.subscripted.eloriseClans.utils.SmartConfig;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
@@ -19,12 +20,13 @@ import java.util.concurrent.CompletableFuture;
 public class MySQL {
 
     static Connection connection;
+    static SmartConfig config = SmartConfig.load("mysql.yml");
 
-    public static String username = "root";
-    public static String password = "";
-    public static String database = "survival";
-    public static String host = "localhost";
-    public static String port = "3306";
+    public static String username = config.getString("username");
+    public static String password = config.getString("password");
+    public static String database = config.getString("database");
+    public static String host = config.getString("host");
+    public static String port = config.getString("port");
 
     public static Connection getConnection() {
         if (!isConnected()) {

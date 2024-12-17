@@ -10,6 +10,7 @@ import dev.subscripted.eloriseClans.events.LevelAbs;
 import dev.subscripted.eloriseClans.gui.ClanMenus;
 import dev.subscripted.eloriseClans.manager.BankUIListener;
 import dev.subscripted.eloriseClans.manager.ClanManager;
+import dev.subscripted.eloriseClans.utils.CfC;
 import dev.subscripted.eloriseClans.utils.ChunkCache;
 import dev.subscripted.eloriseClans.utils.SoundLibrary;
 import lombok.Getter;
@@ -47,6 +48,8 @@ public final class Main extends JavaPlugin {
                 "[]=====================================================[] \n");
 
         instance = this;
+        CfC.createSomeDefaults();
+        CfC.setSomeDefaults();
         mySQL = new MySQL();
         coins = new Coins(mySQL);
         library = new SoundLibrary();
