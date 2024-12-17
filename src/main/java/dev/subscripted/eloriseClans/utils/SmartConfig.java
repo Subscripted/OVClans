@@ -114,7 +114,7 @@ public class SmartConfig {
         if (!isValueEqual(path, value)) {
             config.set(path, value);
             config.save(file);
-            System.out.println("New value Saved to: " + path + " = " + value);
+            System.out.println("New value Saved to d: " + path + " = " + value);
         }
     }
 
