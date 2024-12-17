@@ -1,10 +1,9 @@
-package dev.subscripted.eloriseClans.utils;
+package dev.subscripted.eloriseClans.settings;
 
 import dev.subscripted.eloriseClans.utils.ClanChunk;
 import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Particle;
-import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.Particle.DustTransition;
 

@@ -3,7 +3,7 @@ package dev.subscripted.eloriseClans;
 import dev.subscripted.eloriseClans.commands.ClanCommand;
 import dev.subscripted.eloriseClans.database.MySQL;
 import dev.subscripted.eloriseClans.database.connections.Coins;
-import dev.subscripted.eloriseClans.events.BlockBreak;
+import dev.subscripted.eloriseClans.events.ClanChunkInteract;
 import dev.subscripted.eloriseClans.events.ClanMenuInteractions;
 import dev.subscripted.eloriseClans.events.JoinLeave;
 import dev.subscripted.eloriseClans.events.LevelAbs;
@@ -54,7 +54,7 @@ public final class Main extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new LevelAbs(library, clanManager), instance);
         getServer().getPluginManager().registerEvents(new BankUIListener(library, clanManager, new ClanMenus(mySQL, clanManager)), instance);
         getServer().getPluginManager().registerEvents(new LevelAbs(library, clanManager), instance);
-        getServer().getPluginManager().registerEvents(new BlockBreak(clanManager), instance);
+        getServer().getPluginManager().registerEvents(new ClanChunkInteract(clanManager), instance);
         getServer().getPluginManager().registerEvents(new JoinLeave(clanManager), instance);
 
 

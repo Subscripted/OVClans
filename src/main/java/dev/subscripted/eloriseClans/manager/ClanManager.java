@@ -3,7 +3,7 @@ package dev.subscripted.eloriseClans.manager;
 import dev.subscripted.eloriseClans.Main;
 import dev.subscripted.eloriseClans.database.MySQL;
 import dev.subscripted.eloriseClans.utils.ChunkCache;
-import dev.subscripted.eloriseClans.utils.ChunkVisualizer;
+import dev.subscripted.eloriseClans.settings.ChunkVisualizer;
 import dev.subscripted.eloriseClans.utils.ClanChunk;
 import dev.subscripted.eloriseClans.utils.UUIDFetcher;
 import lombok.AccessLevel;
@@ -657,6 +657,20 @@ public class ClanManager {
                         });
             }
         }.runTaskTimer(Main.getInstance(), 0L, 5L);
+    }
+
+    public boolean doesClanExist(String clanPrefix) {
+        String query = "SELECT COUNT(*) FROM Clans WHERE ClanPrefix = ?";
+        try (PreparedStatement stmt = MySQL.getConnection().prepareStatement(query)) {
+            stmt.setString(1, clanPrefix);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1) > 0;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
 }

@@ -155,50 +155,55 @@ public class ClanCommand implements CommandExecutor, TabCompleter {
                     if (args.length == 2) {
                         String clanPrefix = args[1];
                         String currentClan = manager.getMemberClan(cSender_uuid);
-                        String clanName = manager.getClanName(cSender_uuid);
+                        String clanName = manager.getClanNameByPrefix(clanPrefix); // Clan-Namen anhand Prefix laden
 
-                        // Prüfen, ob der Clan existiert und der Spieler Mitglied des Clans ist
-                        if (currentClan != null && currentClan.equals(clanPrefix)) {
-                            // Für Clan-Besitzer: Prüfen, ob der Spieler Besitzer des Clans ist
-                            if (manager.isOwnerOfClan(cSender_uuid, clanPrefix)) {
-                                sendActionBar(cSender, "§7Du hast deinen Clan " + ChatColor.translateAlternateColorCodes('&', clanName != null ? clanName : "N/A") + " §7gelöscht");
-                                manager.deleteClan(clanPrefix);
-                                library.playSoundForAll(CustomSound.WARNING, 1f, 2f);
-
-                                for (Player p : Bukkit.getServer().getOnlinePlayers()) {
-                                    p.sendMessage(" ");
-                                    p.sendMessage(Main.getInstance().getPrefix() + "§7Der Clan " + ChatColor.translateAlternateColorCodes('&', clanName != null ? clanName : "N/A") + " §7wurde aufgelöst!");
-                                    p.sendMessage(" ");
-                                }
-                                return true; // Erfolg
-                            }
-
-                            // Für Teammitglieder mit Berechtigung: Clans löschen
-                            if (cSender.hasPermission("survival.clans.delete")) {
-                                sendActionBar(cSender, "§7Du hast den Clan " + ChatColor.translateAlternateColorCodes('&', clanName != null ? clanName : "N/A") + " §7gelöscht");
-                                manager.deleteClan(clanPrefix);
-                                library.playSoundForAll(CustomSound.WARNING, 1f, 2f);
-
-                                for (Player p : Bukkit.getServer().getOnlinePlayers()) {
-                                    p.sendMessage(" ");
-                                    p.sendMessage(Main.getInstance().getPrefix() + "§7Der Clan " + ChatColor.translateAlternateColorCodes('&', clanName != null ? clanName : "N/A") + " §7wurde von einem §c§lTeammitglied aufgelöst!");
-                                    p.sendMessage(" ");
-                                }
-                                return true; // Erfolg
-                            }
-                            sendActionBar(cSender, "§7Du bist nicht der Besitzer dieses Clans und hast keine Berechtigung, ihn zu löschen!");
-                            library.playLibrarySound(cSender, CustomSound.NO_PERMISSION, 1f, 1f);
-                            return false;
-                        } else {
-                            sendActionBar(cSender, "§7Diesen Clan gibt es nicht oder du bist kein Mitglied!");
+                        // Existiert der Clan überhaupt?
+                        if (clanName == null) {
+                            sendActionBar(cSender, "§7Der Clan §c" + clanPrefix + " §7existiert nicht!");
                             library.playLibrarySound(cSender, CustomSound.NOT_ALLOWED, 1f, 1f);
-                            return false;
+                            break;
                         }
+
+                        // Wenn der Spieler der Owner des Clans ist
+                        if (manager.isOwnerOfClan(cSender_uuid, clanPrefix)) {
+                            sendActionBar(cSender, "§7Du hast deinen Clan §c" + ChatColor.translateAlternateColorCodes('&', clanName) + " §7aufgelöst!");
+                            manager.deleteClan(clanPrefix);
+                            library.playSoundForAll(CustomSound.WARNING, 1f, 2f);
+
+                            for (Player p : Bukkit.getServer().getOnlinePlayers()) {
+                                p.sendMessage(" ");
+                                p.sendMessage(Main.getInstance().getPrefix() + "§7Der Clan §c" + ChatColor.translateAlternateColorCodes('&', clanName) + " §7wurde aufgelöst!");
+                                p.sendMessage(" ");
+                            }
+                            break;
+                        }
+
+                        // Wenn ein Teammitglied den Clan löscht
+                        if (cSender.hasPermission("survival.clans.delete")) {
+                            sendActionBar(cSender, "§7Du hast den Clan §c" + ChatColor.translateAlternateColorCodes('&', clanName) + " §7gelöscht!");
+                            manager.deleteClan(clanPrefix);
+                            library.playSoundForAll(CustomSound.WARNING, 1f, 2f);
+
+                            for (Player p : Bukkit.getServer().getOnlinePlayers()) {
+                                p.sendMessage(" ");
+                                p.sendMessage(Main.getInstance().getPrefix() + "§7Der Clan §c" + ChatColor.translateAlternateColorCodes('&', clanName) + " §7wurde von einem §c§lTeammitglied §7aufgelöst!");
+                                p.sendMessage(" ");
+                            }
+                            break;
+                        }
+
+                        // Wenn der Spieler nicht berechtigt ist oder kein Mitglied
+                        sendActionBar(cSender, "§7Du bist nicht berechtigt, diesen Clan zu löschen oder bist kein Mitglied davon!");
+                        library.playLibrarySound(cSender, CustomSound.NOT_ALLOWED, 1f, 1f);
+                        break;
+
                     } else {
+                        // Falsche Syntax
                         sendActionBar(cSender, "§7Benutze §7/clan delete §c<clanPrefix>");
                         library.playLibrarySound(cSender, CustomSound.WRONG_USAGE, 1f, 1f);
-                        return false;
+                        break;
                     }
+
                 case "chat":
                     if (args.length >= 2) {
                         if (manager.isClanMember(cSender_uuid)) {
@@ -282,18 +287,6 @@ public class ClanCommand implements CommandExecutor, TabCompleter {
                 case "claim":
                     manager.claimChunk(cSender, getClanPrefix(cSender));
                     break;
-                case "showclaims":
-                    String clanPrefix = getClanPrefix(cSender);
-                    if (manager.isClanBorderShown(clanPrefix)) {
-                        manager.hideBorders(clanPrefix);
-                        cSender.sendMessage("§cDie Anzeige deiner geclaimten Chunks wurde deaktiviert!");
-                    } else {
-                        cSender.sendMessage("§aDie Anzeige deiner geclaimten Chunks wurde aktiviert!");
-                        manager.showBorders(getClanPrefix(cSender));
-                        manager.startShowingClaims(cSender, manager.getClanPrefix(cSender_uuid));
-                    }
-                    break;
-
 
                 case "delclaim":
                     manager.delClaim(cSender, getClanPrefix(cSender));
