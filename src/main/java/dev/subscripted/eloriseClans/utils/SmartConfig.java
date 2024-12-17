@@ -97,7 +97,7 @@ public class SmartConfig {
         return config.getString(path);
     }
 
-    public int getInt(String path) {
+    public int getIntt(String path) {
         return config.getInt(path);
     }
 
