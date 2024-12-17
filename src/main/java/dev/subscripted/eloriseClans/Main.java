@@ -14,8 +14,12 @@ import dev.subscripted.eloriseClans.utils.CfC;
 import dev.subscripted.eloriseClans.utils.ChunkCache;
 import dev.subscripted.eloriseClans.utils.SoundLibrary;
 import lombok.Getter;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import java.sql.SQLException;
 
 public final class Main extends JavaPlugin {
     @Getter
@@ -35,18 +39,6 @@ public final class Main extends JavaPlugin {
 
     @Override
     public void onEnable() {
-
-
-        getLogger().info("\n" +
-                "[]=====================================================[] \n" +
-                "    _   __           _ __                   __   \n" +
-                "   / | / /___ _   __(_) /_  ___  _____ ____/ /__ \n" +
-                "  /  |/ / __ \\ | / / / __ \\/ _ \\/ ___// __  / _ \\\n" +
-                " / /|  / /_/ / |/ / / /_/ /  __(__  )/ /_/ /  __/\n" +
-                "/_/ |_/\\____/|___/_/_.___/\\___/____(_)__,_/\\___/ \n" +
-                "                                                 \n" +
-                "[]=====================================================[] \n");
-
         instance = this;
         CfC.createSomeDefaults();
         CfC.setSomeDefaults();
@@ -57,40 +49,25 @@ public final class Main extends JavaPlugin {
         MySQL.connect();
         MySQL.createTable();
         chunkCache = new ChunkCache();
-
-
-
-        getLogger().info("\n" +
-                "[]=====================================================[] \n" +
-                "  _____                _ _               _____                                          _     \n" +
-                " |  __ \\              (_) |             / ____|                                        | |    \n" +
-                " | |__) |___  __ _ ___ _| |_ ___ _ __  | |     ___  _ __ ___  _ __ ___   __ _ _ __   __| |___ \n" +
-                " |  _  // _ \\/ _` / __| | __/ _ \\ '__| | |    / _ \\| '_ ` _ \\| '_ ` _ \\ / _` | '_ \\ / _` / __|\n" +
-                " | | \\ \\  __/ (_| \\__ \\ | ||  __/ |    | |___| (_) | | | | | | | | | | | (_| | | | | (_| \\__ \\\n" +
-                " |_|  \\_\\___|\\__, |___/_|\\__\\___|_|     \\_____\\___/|_| |_| |_|_| |_| |_|\\__,_|_| |_|\\__,_|___/\n" +
-                "              __/ |                                                                           \n" +
-                "             |___/                                                                            \n" +
-                "[]=====================================================[]\n");
-
         getCommand("clan").setExecutor(new ClanCommand(clanManager, new ClanMenus(mySQL, clanManager), library));
-
-        getLogger().info("\n" +
-                "[]=====================================================[] \n" +
-                "  _____                _ _              _      _     _                       \n" +
-                " |  __ \\              (_) |            | |    (_)   | |                      \n" +
-                " | |__) |___  __ _ ___ _| |_ ___ _ __  | |     _ ___| |_ ___ _ __   ___ _ __ \n" +
-                " |  _  // _ \\/ _` / __| | __/ _ \\ '__| | |    | / __| __/ _ \\ '_ \\ / _ \\ '__|\n" +
-                " | | \\ \\  __/ (_| \\__ \\ | ||  __/ |    | |____| \\__ \\ ||  __/ | | |  __/ |   \n" +
-                " |_|  \\_\\___|\\__, |___/_|\\__\\___|_|    |______|_|___/\\__\\___|_| |_|\\___|_|   \n" +
-                "              __/ |                                                          \n" +
-                "             |___/                                                           \n" +
-                "[]=====================================================[] \n");
         getServer().getPluginManager().registerEvents(new ClanMenuInteractions(clanManager, library, new ClanMenus(mySQL, clanManager)), instance);
         getServer().getPluginManager().registerEvents(new LevelAbs(library, clanManager), instance);
         getServer().getPluginManager().registerEvents(new BankUIListener(library, clanManager, new ClanMenus(mySQL, clanManager)), instance);
         getServer().getPluginManager().registerEvents(new LevelAbs(library, clanManager), instance);
         getServer().getPluginManager().registerEvents(new BlockBreak(clanManager), instance);
         getServer().getPluginManager().registerEvents(new JoinLeave(clanManager), instance);
+
+
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            try {
+                if (clanManager.isMemberOfClan(p.getUniqueId(), clanManager.getClanPrefix(p.getUniqueId()))) {
+                    clanManager.startShowingClaims(p, clanManager.getClanPrefix(p.getUniqueId()));
+                }
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+
+        }
     }
 
     @Override

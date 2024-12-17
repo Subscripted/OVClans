@@ -1,5 +1,6 @@
 package dev.subscripted.eloriseClans.events;
 
+import dev.subscripted.eloriseClans.Main;
 import dev.subscripted.eloriseClans.manager.ClanManager;
 import dev.subscripted.eloriseClans.utils.SmartConfig;
 import lombok.AccessLevel;
@@ -11,6 +12,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
+import java.sql.SQLException;
 import java.util.UUID;
 
 @RequiredArgsConstructor
@@ -20,7 +22,13 @@ public class JoinLeave implements Listener {
     final ClanManager clanManager;
 
     @EventHandler
-    public void onJoin(PlayerJoinEvent event) {
+    public void onJoin(PlayerJoinEvent event) throws SQLException {
+        Player player = event.getPlayer();
+        UUID playerUUID = player.getUniqueId();
+        String clanPrefix = clanManager.getClanPrefix(playerUUID);
+        if (clanManager.isClanBorderShown(clanPrefix)) {
+            clanManager.startShowingClaims(player, clanPrefix);
+        }
     }
 
     @EventHandler

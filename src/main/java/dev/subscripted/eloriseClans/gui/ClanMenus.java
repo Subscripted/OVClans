@@ -109,10 +109,15 @@ public class ClanMenus {
         ItemBuilder member = new ItemBuilder(Material.PLAYER_HEAD).setSkullOwner(UUIDFetcher.getName(clanManager.getClanOwner("Owner", clanPrefix))).setDisplayName("§b§lMitglieder");
         ItemBuilder pvp = new ItemBuilder(Material.IRON_SWORD).setDisplayName("§c§lPVP")
                 .addLoreLine(clanManager.isClanPVPEnabled(clanPrefix) ? "§aAktiv" : "§cAus");
+
+        ItemBuilder claimborders = new ItemBuilder(Material.GLOWSTONE_DUST).setDisplayName("§6§lClaim-Border")
+                .addLoreLine(clanManager.isClanBorderShown(clanPrefix) ? "§aAktiv" : "§cAus");
+
         InventoryAdvancer.fillCorners(inventory, corners);
         InventoryAdvancer.makePattern(inventory, fill);
         inventory.setItem(49, backitem());
         inventory.setItem(15, pvp.build());
+        inventory.setItem(14, claimborders.build());
         inventory.setItem(40, deleteclan.build());
         inventory.setItem(38, member.build());
         setClanSettingsMiddle(inventory, fill);

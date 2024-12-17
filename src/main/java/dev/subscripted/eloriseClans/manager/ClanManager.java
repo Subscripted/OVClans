@@ -3,6 +3,7 @@ package dev.subscripted.eloriseClans.manager;
 import dev.subscripted.eloriseClans.Main;
 import dev.subscripted.eloriseClans.database.MySQL;
 import dev.subscripted.eloriseClans.utils.ChunkCache;
+import dev.subscripted.eloriseClans.utils.ChunkVisualizer;
 import dev.subscripted.eloriseClans.utils.ClanChunk;
 import dev.subscripted.eloriseClans.utils.UUIDFetcher;
 import lombok.AccessLevel;
@@ -12,6 +13,7 @@ import lombok.SneakyThrows;
 import lombok.experimental.FieldDefaults;
 import org.bukkit.Chunk;
 import org.bukkit.entity.Player;
+import org.bukkit.scheduler.BukkitRunnable;
 
 import java.sql.*;
 import java.text.SimpleDateFormat;
@@ -440,6 +442,39 @@ public class ClanManager {
     }
 
     @SneakyThrows
+    public boolean isClanBorderShown(String clanPrefix) throws SQLException {
+        String checkPVPQuery = "SELECT clanborder FROM ClanSettings WHERE ClanPrefix = ?";
+        try (PreparedStatement stmt = MySQL.getConnection().prepareStatement(checkPVPQuery)) {
+            stmt.setString(1, clanPrefix);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return rs.getBoolean("clanborder");
+            }
+        }
+        return false;
+    }
+
+
+    @SneakyThrows
+    public void hideBorders(String clanPrefix) throws SQLException {
+        String updateQuery = "UPDATE ClanSettings SET clanborder = 0 WHERE ClanPrefix = ?";
+        try (PreparedStatement stmt = MySQL.getConnection().prepareStatement(updateQuery)) {
+            stmt.setString(1, clanPrefix);
+            stmt.executeUpdate();
+        }
+    }
+
+    @SneakyThrows
+    public void showBorders(String clanPrefix) throws SQLException {
+        String updateQuery = "UPDATE ClanSettings SET clanborder = 1 WHERE ClanPrefix = ?";
+        try (PreparedStatement stmt = MySQL.getConnection().prepareStatement(updateQuery)) {
+            stmt.setString(1, clanPrefix);
+            stmt.executeUpdate();
+        }
+    }
+
+
+    @SneakyThrows
     public void setMemberRank(UUID memberUUID, String clanPrefix, String rank) throws SQLException {
         if (!Arrays.asList("Mitglied", "Ältester", "Vize", "Owner").contains(rank)) {
             throw new IllegalArgumentException("Ungültiger Rang: " + rank);
@@ -502,26 +537,19 @@ public class ClanManager {
         int chunkZ = chunk.getZ();
 
         try (Connection connection = MySQL.getConnection()) {
-            // Überprüfen, ob der Chunk bereits geclaimt ist
             if (ChunkCache.isChunkClaimed(world, chunkX, chunkZ)) {
-                // Besitzer des Chunks ermitteln
                 ClanChunk existingClaim = ChunkCache.getClaimedChunk(world, chunkX, chunkZ);
                 if (existingClaim != null) {
                     if (existingClaim.getClanPrefix().equals(clanPrefix)) {
-                        // Spieler versucht, einen Chunk zu claimen, der bereits seinem Clan gehört
                         player.sendMessage("Dieser Chunk gehört bereits deinem Clan!");
                     } else {
-                        // Spieler versucht, einen Chunk zu claimen, der einem anderen Clan gehört
                         player.sendMessage("Dieser Chunk gehört bereits dem Clan: " + existingClaim.getClanPrefix());
                     }
                 } else {
-                    // Fallback, falls der Claim im Cache fehlt
                     player.sendMessage("Dieser Chunk wurde bereits geclaimt!");
                 }
                 return false;
             }
-
-            // Chunk claimen
             PreparedStatement claimStatement = connection.prepareStatement(
                     "INSERT INTO ClaimedChunks (ClanPrefix, World, ChunkX, ChunkZ) VALUES (?, ?, ?, ?)"
             );
@@ -531,8 +559,6 @@ public class ClanManager {
             claimStatement.setInt(4, chunkZ);
 
             claimStatement.executeUpdate();
-
-            // Cache aktualisieren
             ClanChunk clanChunk = new ClanChunk(world, chunkX, chunkZ, clanPrefix);
             ChunkCache.addChunk(clanChunk);
 
@@ -611,6 +637,27 @@ public class ClanManager {
         }
     }
 
+    public void startShowingClaims(Player player, String clanPrefix) {
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                try {
+                    if (!isClanBorderShown(clanPrefix)) {
+                        cancel();
+                        return;
+                    }
+                } catch (SQLException e) {
+                    throw new RuntimeException(e);
+                }
+
+                ChunkCache.getAllChunks().stream()
+                        .filter(chunk -> chunk.getClanPrefix().equals(clanPrefix))
+                        .forEach(chunk -> {
+                            ChunkVisualizer.showChunkBorder(player, chunk);
+                        });
+            }
+        }.runTaskTimer(Main.getInstance(), 0L, 5L);
+    }
 
 }
 

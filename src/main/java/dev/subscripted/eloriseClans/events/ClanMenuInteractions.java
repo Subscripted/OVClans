@@ -112,6 +112,23 @@ public class ClanMenuInteractions implements Listener {
                         }
                         library.playLibrarySound(player, CustomSound.GUI_SOUND, 1f, 2f);
                         break;
+                    case 14:
+
+
+                        if (clanManager.isClanBorderShown(clanPrefix)) {
+                            clanManager.hideBorders(clanPrefix);
+                            menus.openClanSettings(player);
+                        } else {
+                            clanManager.showBorders(clanPrefix);
+                            for (Player p : Bukkit.getServer().getOnlinePlayers()) {
+                                if (clanManager.isMemberOfClan(p.getUniqueId(), clanPrefix)) {
+                                    clanManager.startShowingClaims(p, clanPrefix);
+                                }
+                            }
+                            menus.openClanSettings(player);
+                        }
+                        library.playLibrarySound(player, CustomSound.GUI_SOUND, 1f, 2f);
+                        break;
                 }
             }
         }

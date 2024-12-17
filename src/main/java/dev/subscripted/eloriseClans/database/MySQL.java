@@ -92,6 +92,7 @@ public class MySQL {
                         "CREATE TABLE IF NOT EXISTS ClanSettings (" +
                                 "ClanPrefix VARCHAR(50) NOT NULL, " +
                                 "pvp BOOLEAN NOT NULL DEFAULT FALSE, " +
+                                "clanborder BOOLEAN NOT NULL DEFAULT true, " +
                                 "PRIMARY KEY (ClanPrefix), " +
                                 "FOREIGN KEY (ClanPrefix) REFERENCES Clans(ClanPrefix) ON DELETE CASCADE)"
                 );

@@ -4,7 +4,6 @@ import dev.subscripted.eloriseClans.Main;
 import dev.subscripted.eloriseClans.database.connections.Coins;
 import dev.subscripted.eloriseClans.gui.ClanMenus;
 import dev.subscripted.eloriseClans.manager.ClanManager;
-import dev.subscripted.eloriseClans.manager.ShowClaimsManager;
 import dev.subscripted.eloriseClans.utils.*;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -187,20 +186,18 @@ public class ClanCommand implements CommandExecutor, TabCompleter {
                                 }
                                 return true; // Erfolg
                             }
-
-                            // Weder Besitzer noch Berechtigung
                             sendActionBar(cSender, "§7Du bist nicht der Besitzer dieses Clans und hast keine Berechtigung, ihn zu löschen!");
                             library.playLibrarySound(cSender, CustomSound.NO_PERMISSION, 1f, 1f);
-                            return false; // Kein Erfolg
+                            return false;
                         } else {
                             sendActionBar(cSender, "§7Diesen Clan gibt es nicht oder du bist kein Mitglied!");
                             library.playLibrarySound(cSender, CustomSound.NOT_ALLOWED, 1f, 1f);
-                            return false; // Kein Erfolg
+                            return false;
                         }
                     } else {
                         sendActionBar(cSender, "§7Benutze §7/clan delete §c<clanPrefix>");
                         library.playLibrarySound(cSender, CustomSound.WRONG_USAGE, 1f, 1f);
-                        return false; // Falscher Befehl
+                        return false;
                     }
                 case "chat":
                     if (args.length >= 2) {
@@ -286,15 +283,17 @@ public class ClanCommand implements CommandExecutor, TabCompleter {
                     manager.claimChunk(cSender, getClanPrefix(cSender));
                     break;
                 case "showclaims":
-                    ShowClaimsManager.toggleShowClaims(cSender_uuid);
-
-                    if (ShowClaimsManager.isShowingClaims(cSender_uuid)) {
-                        cSender.sendMessage("§aDie Anzeige deiner geclaimten Chunks wurde aktiviert!");
-                        startShowingClaims(cSender, manager.getClanPrefix(cSender_uuid));
-                    } else {
+                    String clanPrefix = getClanPrefix(cSender);
+                    if (manager.isClanBorderShown(clanPrefix)) {
+                        manager.hideBorders(clanPrefix);
                         cSender.sendMessage("§cDie Anzeige deiner geclaimten Chunks wurde deaktiviert!");
+                    } else {
+                        cSender.sendMessage("§aDie Anzeige deiner geclaimten Chunks wurde aktiviert!");
+                        manager.showBorders(getClanPrefix(cSender));
+                        manager.startShowingClaims(cSender, manager.getClanPrefix(cSender_uuid));
                     }
                     break;
+
 
                 case "delclaim":
                     manager.delClaim(cSender, getClanPrefix(cSender));
@@ -407,24 +406,5 @@ public class ClanCommand implements CommandExecutor, TabCompleter {
     private String getClanPrefix(Player player) {
         return manager.getClanPrefix(player.getUniqueId());
     }
-
-    private void startShowingClaims(Player player, String clanPrefix) {
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (!ShowClaimsManager.isShowingClaims(player.getUniqueId())) {
-                    cancel();
-                    return;
-                }
-
-                ChunkCache.getAllChunks().stream()
-                        .filter(chunk -> chunk.getClanPrefix().equals(clanPrefix))
-                        .forEach(chunk -> {
-                            ChunkVisualizer.showChunkBorder(player, chunk);
-                        });
-            }
-        }.runTaskTimer(Main.getInstance(), 0L, 5L);
-    }
-
 
 }
