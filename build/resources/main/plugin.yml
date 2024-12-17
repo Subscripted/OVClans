@@ -1,0 +1,6 @@
+name: EloriseClans
+version: '1.0-SNAPSHOT'
+main: dev.subscripted.eloriseClans.Main
+api-version: '1.21'
+commands:
+  clan:
