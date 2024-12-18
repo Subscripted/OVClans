@@ -111,6 +111,7 @@ public class ClanCommand implements CommandExecutor, TabCompleter {
                         manager.setMemberRank(cSender_uuid, clanPrefix, "Owner");
                         coins.removeCoins(cSender_uuid, buyprice);
                         sendActionBar(cSender, "§7Du hast erfolgreich deinen Clan gegründet! §8(§7Name: " + ChatColor.translateAlternateColorCodes('&', clanName) + " §8| §7Prefix: §e" + clanPrefix + "§8)");
+                        manager.startShowingClaims(cSender, getClanPrefix(cSender));
                         library.playLibrarySound(cSender, CustomSound.SUCCESSFULL, 1f, 1f);
                     } else {
                         sendActionBar(cSender, "§7Benutze §e/clan create §c<prefix> <name>");
@@ -271,6 +272,11 @@ public class ClanCommand implements CommandExecutor, TabCompleter {
                         invitePlayer(cSender, targetPlayer);
                         sendActionBar(cSender, "§aDu hast §e" + targetPlayerName + " §ain deinen Clan eingeladen!");
                         targetPlayer.sendMessage("§7[Clan Invite] §e" + cSender.getName() + " §7hat dich in seinen Clan eingeladen!");
+
+
+                        //todo: Beitrits Mechanismus
+
+
                         library.playLibrarySound(cSender, CustomSound.SUCCESSFULL, 1f, 1f);
                     } else {
                         sendActionBar(cSender, "§7Benutze §e/clan invite §c<Spieler>");
@@ -286,6 +292,7 @@ public class ClanCommand implements CommandExecutor, TabCompleter {
 
                 case "claim":
                     manager.claimChunk(cSender, getClanPrefix(cSender));
+
                     break;
 
                 case "delclaim":
@@ -353,6 +360,9 @@ public class ClanCommand implements CommandExecutor, TabCompleter {
     }
 
     public void sendActionBar(Player player, String message) {
+        if (message == null || message.trim().isEmpty()) {
+            throw new IllegalArgumentException("Message cannot be null or empty");
+        }
         player.sendActionBar(Main.getInstance().getPrefix() + message);
     }
 

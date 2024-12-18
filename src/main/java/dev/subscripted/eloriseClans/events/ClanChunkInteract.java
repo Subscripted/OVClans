@@ -19,6 +19,7 @@ public class ClanChunkInteract implements Listener {
 
     final ClanManager manager;
 
+
     @EventHandler
     public void onBreak(BlockBreakEvent event) {
         Player player = event.getPlayer();
@@ -32,11 +33,11 @@ public class ClanChunkInteract implements Listener {
         if (claimedChunk == null) {
             return;
         }
-        if (!player.hasPermission("clans.claim.bypass")) {
-            if (playerClan == null || !playerClan.equals(claimedChunk.getClanPrefix())) {
-                event.setCancelled(true);
-                player.sendMessage("§cDu kannst hier nichts abbauen! Dieser Chunk gehört dem Clan: §e" + claimedChunk.getClanPrefix());
-            }
+
+        // Spieler darf nicht abbauen, wenn er keine Berechtigung hat UND nicht Mitglied des Clans ist
+        if (!(player.hasPermission("clans.claim.bypass") || playerClan.equals(claimedChunk.getClanPrefix()))) {
+            event.setCancelled(true);
+            player.sendMessage("§cDu kannst hier nichts abbauen! Dieser Chunk gehört dem Clan: §e" + claimedChunk.getClanPrefix());
         }
     }
 
@@ -53,14 +54,13 @@ public class ClanChunkInteract implements Listener {
         if (claimedChunk == null) {
             return;
         }
-        if (!player.hasPermission("clans.claim.bypass")) {
-            if (playerClan == null || !playerClan.equals(claimedChunk.getClanPrefix()) || !player.hasPermission("clans.claim.bypass")) {
-                event.setCancelled(true);
-                player.sendMessage("§cDu kannst hier nichts Abbauen! Dieser Chunk gehört dem Clan: §e" + claimedChunk.getClanPrefix());
-            }
+
+        // Spieler darf nicht platzieren, wenn er keine Berechtigung hat UND nicht Mitglied des Clans ist
+        if (!(player.hasPermission("clans.claim.bypass") || playerClan.equals(claimedChunk.getClanPrefix()))) {
+            event.setCancelled(true);
+            player.sendMessage("§cDu kannst hier nichts platzieren! Dieser Chunk gehört dem Clan: §e" + claimedChunk.getClanPrefix());
         }
     }
-
 
     @EventHandler
     public void onInteract(PlayerInteractEvent event) {
@@ -81,14 +81,10 @@ public class ClanChunkInteract implements Listener {
             return;
         }
 
-        String claimedClanPrefix = claimedChunk.getClanPrefix();
-        if (!player.hasPermission("clans.claim.bypass")) {
-            if (playerClan == null || !playerClan.equals(claimedClanPrefix) || !player.hasPermission("clans.claim.bypass")) {
-                event.setCancelled(true);
-                player.sendMessage("§cDu kannst hier nicht Interagieren! Dieser Chunk gehört dem Clan: §e" + claimedClanPrefix);
-            }
+        // Spieler darf nicht interagieren, wenn er keine Berechtigung hat UND nicht Mitglied des Clans ist
+        if (!(player.hasPermission("clans.claim.bypass") || playerClan.equals(claimedChunk.getClanPrefix()))) {
+            event.setCancelled(true);
+            player.sendMessage("§cDu kannst hier nicht interagieren! Dieser Chunk gehört dem Clan: §e" + claimedChunk.getClanPrefix());
         }
     }
-
-
 }

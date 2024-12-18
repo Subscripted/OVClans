@@ -49,8 +49,20 @@ public class ClanManager {
             stmt.setString(1, clanPrefix);
             stmt.executeUpdate();
         }
-
+        removeAllChunksFromClan(clanPrefix);
         removeMembersFromClan(clanPrefix);
+    }
+
+    private void removeAllChunksFromClan(String clanPrefix) throws SQLException {
+        String deleteChunksQuery = "DELETE FROM ClaimedChunks WHERE ClanPrefix = ?";
+        try (PreparedStatement stmt = mySQL.getConnection().prepareStatement(deleteChunksQuery)) {
+            stmt.setString(1, clanPrefix);
+            stmt.executeUpdate();
+        }
+
+        ChunkCache.getAllChunks().stream()
+                .filter(chunk -> chunk.getClanPrefix().equals(clanPrefix))
+                .forEach(chunk -> ChunkCache.removeChunk(chunk.getWorld(), chunk.getChunkX(), chunk.getChunkZ()));
     }
 
     @SneakyThrows
@@ -649,12 +661,20 @@ public class ClanManager {
                 } catch (SQLException e) {
                     throw new RuntimeException(e);
                 }
+                try {
+                    if (isMemberOfClan(player.getUniqueId(), clanPrefix)) {
 
-                ChunkCache.getAllChunks().stream()
-                        .filter(chunk -> chunk.getClanPrefix().equals(clanPrefix))
-                        .forEach(chunk -> {
-                            ChunkVisualizer.showChunkBorder(player, chunk);
-                        });
+                        ChunkCache.getAllChunks().stream()
+                                .filter(chunk -> chunk.getClanPrefix().equals(clanPrefix))
+                                .forEach(chunk -> {
+                                    ChunkVisualizer.showChunkBorder(player, chunk);
+                                });
+                    } else {
+                        cancel();
+                    }
+                } catch (SQLException e) {
+                    throw new RuntimeException(e);
+                }
             }
         }.runTaskTimer(Main.getInstance(), 0L, 5L);
     }
