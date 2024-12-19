@@ -12,6 +12,7 @@ import dev.subscripted.eloriseClans.manager.BankUIListener;
 import dev.subscripted.eloriseClans.manager.ClanManager;
 import dev.subscripted.eloriseClans.utils.CfC;
 import dev.subscripted.eloriseClans.utils.ChunkCache;
+import dev.subscripted.eloriseClans.utils.SkullTextureCache;
 import dev.subscripted.eloriseClans.utils.SoundLibrary;
 import lombok.Getter;
 import org.bukkit.Bukkit;
@@ -20,6 +21,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.sql.SQLException;
+import java.util.Map;
+import java.util.UUID;
 
 public final class Main extends JavaPlugin {
     @Getter
@@ -48,6 +51,11 @@ public final class Main extends JavaPlugin {
         clanManager = new ClanManager(mySQL);
         MySQL.connect();
         MySQL.createTable();
+
+        Map<UUID, String> players = clanManager.fetchPlayersFromDatabase(); // Implementiere diese Methode
+        SkullTextureCache.initializeCache(players);
+
+
         chunkCache = new ChunkCache();
         getCommand("clan").setExecutor(new ClanCommand(clanManager, new ClanMenus(mySQL, clanManager), library));
         getServer().getPluginManager().registerEvents(new ClanMenuInteractions(clanManager, library, new ClanMenus(mySQL, clanManager)), instance);

@@ -13,17 +13,36 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 
+import java.sql.SQLException;
+
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @RequiredArgsConstructor
 public class ClanChunkInteract implements Listener {
 
     final ClanManager manager;
 
+    private boolean isActionAllowed(Player player, ClanChunk claimedChunk) throws SQLException {
+        String playerClan = manager.getClanPrefix(player.getUniqueId());
+
+
+        if (playerClan == null) {
+            player.sendMessage("§cDu gehörst keinem Clan an und kannst hier nichts machen! Dieser Chunk gehört dem Clan: §e" + claimedChunk.getClanPrefix());
+            return false;
+        }
+
+        if (!player.hasPermission("clans.claim.bypass")
+                && !playerClan.equals(claimedChunk.getClanPrefix())
+                && !manager.isMemberOfClan(player.getUniqueId(), claimedChunk.getClanPrefix())) {
+            player.sendMessage("§cDu hast keine Berechtigung, hier etwas zu machen! Dieser Chunk gehört dem Clan: §e" + claimedChunk.getClanPrefix());
+            return false;
+        }
+
+        return true;
+    }
 
     @EventHandler
-    public void onBreak(BlockBreakEvent event) {
+    public void onBreak(BlockBreakEvent event) throws SQLException {
         Player player = event.getPlayer();
-        String playerClan = manager.getClanPrefix(player.getUniqueId());
 
         String world = event.getBlock().getWorld().getName();
         int chunkX = event.getBlock().getChunk().getX();
@@ -34,18 +53,14 @@ public class ClanChunkInteract implements Listener {
             return;
         }
 
-        // Spieler darf nicht abbauen, wenn er keine Berechtigung hat UND nicht Mitglied des Clans ist
-        if (!(player.hasPermission("clans.claim.bypass") || playerClan.equals(claimedChunk.getClanPrefix()))) {
+        if (!isActionAllowed(player, claimedChunk)) {
             event.setCancelled(true);
-            player.sendMessage("§cDu kannst hier nichts abbauen! Dieser Chunk gehört dem Clan: §e" + claimedChunk.getClanPrefix());
         }
     }
 
     @EventHandler
-    public void onPlace(BlockPlaceEvent event) {
+    public void onPlace(BlockPlaceEvent event) throws SQLException {
         Player player = event.getPlayer();
-        String playerClan = manager.getClanPrefix(player.getUniqueId());
-
         String world = event.getBlock().getWorld().getName();
         int chunkX = event.getBlock().getChunk().getX();
         int chunkZ = event.getBlock().getChunk().getZ();
@@ -55,36 +70,34 @@ public class ClanChunkInteract implements Listener {
             return;
         }
 
-        // Spieler darf nicht platzieren, wenn er keine Berechtigung hat UND nicht Mitglied des Clans ist
-        if (!(player.hasPermission("clans.claim.bypass") || playerClan.equals(claimedChunk.getClanPrefix()))) {
+        if (!isActionAllowed(player, claimedChunk)) {
             event.setCancelled(true);
-            player.sendMessage("§cDu kannst hier nichts platzieren! Dieser Chunk gehört dem Clan: §e" + claimedChunk.getClanPrefix());
         }
     }
 
     @EventHandler
-    public void onInteract(PlayerInteractEvent event) {
+    public void onInteract(PlayerInteractEvent event) throws SQLException {
         Player player = event.getPlayer();
 
+        // Prüfen, ob ein Block angeklickt wurde
         if (event.getClickedBlock() == null) {
             return;
         }
 
-        String playerClan = manager.getClanPrefix(player.getUniqueId());
+        // Chunk-Informationen abrufen
         String world = player.getWorld().getName();
-
         int chunkX = event.getClickedBlock().getChunk().getX();
         int chunkZ = event.getClickedBlock().getChunk().getZ();
 
+        // Prüfen, ob der Chunk geclaimed ist
         ClanChunk claimedChunk = ChunkCache.getClaimedChunk(world, chunkX, chunkZ);
         if (claimedChunk == null) {
-            return;
+            return; // Nicht geclaimter Chunk -> Spieler kann interagieren
         }
 
-        // Spieler darf nicht interagieren, wenn er keine Berechtigung hat UND nicht Mitglied des Clans ist
-        if (!(player.hasPermission("clans.claim.bypass") || playerClan.equals(claimedChunk.getClanPrefix()))) {
+        // Prüfen, ob der Spieler berechtigt ist
+        if (!isActionAllowed(player, claimedChunk)) {
             event.setCancelled(true);
-            player.sendMessage("§cDu kannst hier nicht interagieren! Dieser Chunk gehört dem Clan: §e" + claimedChunk.getClanPrefix());
         }
     }
 }

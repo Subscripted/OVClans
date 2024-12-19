@@ -48,10 +48,15 @@ public class ClanCommand implements CommandExecutor, TabCompleter {
         }
 
 
+
         Player cSender = (Player) sender;
         UUID cSender_uuid = cSender.getUniqueId();
         Coins coins = Main.getInstance().getCoins();
         int buyprice = 50000;
+
+
+        List<UUID> clanMembers = manager.getClanMembers(getClanPrefix(cSender));
+        SkullTextureCache.updateCacheForClan(clanMembers);
 
         if (args.length == 0) {
             if (!manager.isClanMember(cSender_uuid)) {
@@ -291,8 +296,11 @@ public class ClanCommand implements CommandExecutor, TabCompleter {
                     break;
 
                 case "claim":
-                    manager.claimChunk(cSender, getClanPrefix(cSender));
-
+                    if (manager.isClanMember(cSender_uuid) && manager.getMemberRank(cSender_uuid, getClanPrefix(cSender)).equals("Owner")) {
+                        manager.claimChunk(cSender, getClanPrefix(cSender));
+                    } else{
+                        cSender.sendMessage(Main.getInstance().getPrefix() + "§7Du bist in keinem Clan!");
+                    }
                     break;
 
                 case "delclaim":

@@ -5,7 +5,9 @@ import dev.subscripted.eloriseClans.database.MySQL;
 import dev.subscripted.eloriseClans.utils.ChunkCache;
 import dev.subscripted.eloriseClans.settings.ChunkVisualizer;
 import dev.subscripted.eloriseClans.utils.ClanChunk;
+import dev.subscripted.eloriseClans.utils.SkullTextureCache;
 import dev.subscripted.eloriseClans.utils.UUIDFetcher;
+import it.unimi.dsi.fastutil.Pair;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -74,6 +76,7 @@ public class ClanManager {
             stmt.setString(3, rank);
             stmt.executeUpdate();
         }
+        SkullTextureCache.updateCache(memberUUID);
     }
 
     @SneakyThrows
@@ -691,6 +694,25 @@ public class ClanManager {
             e.printStackTrace();
         }
         return false;
+    }
+
+
+    public Map<UUID, String> fetchPlayersFromDatabase() {
+        Map<UUID, String> players = new HashMap<>();
+        String query = "SELECT MemberUUID, Rank FROM ClanMembers";
+
+        try (Connection connection = MySQL.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query);
+             ResultSet resultSet = statement.executeQuery()) {
+
+            while (resultSet.next()) {
+                UUID uuid = UUID.fromString(resultSet.getString("MemberUUID"));
+                players.put(uuid, resultSet.getString("Rank"));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return players;
     }
 
 }
