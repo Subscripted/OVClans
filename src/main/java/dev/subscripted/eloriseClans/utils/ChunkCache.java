@@ -21,7 +21,7 @@ public class ChunkCache {
         System.out.printf("Chunks geladen");
     }
 
-    static final Map<String, Set<ClanChunk>> claimedChunks = new HashMap<>();
+   public static final Map<String, Set<ClanChunk>> claimedChunks = new HashMap<>();
 
     @SneakyThrows
     public void loadChunks() {
@@ -90,6 +90,10 @@ public class ChunkCache {
             allChunks.addAll(chunks);
         }
         return allChunks;
+    }
+
+    private static Set<ClanChunk> getAllChunksForWorld(String worldName) {
+        return ChunkCache.claimedChunks.getOrDefault(worldName, new HashSet<>());
     }
 
 }

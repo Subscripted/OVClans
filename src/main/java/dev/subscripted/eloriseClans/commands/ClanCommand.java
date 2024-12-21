@@ -33,11 +33,13 @@ public class ClanCommand implements CommandExecutor, TabCompleter {
     final ClanManager manager;
     final ClanMenus menus;
     final SoundLibrary library;
+    final SmartConfig config = SmartConfig.load("messages.yml");
 
     static final Pattern VALID_CLAN_PREFIX_PATTERN = Pattern.compile("^[a-zA-Z&]*$");
     static final Pattern VALID_CLAN_NAME_PATTERN = Pattern.compile("^[a-zA-Z& ]*$");
     final Map<UUID, BukkitRunnable> inviteTasks = new HashMap<>();
-    final String clanChatPrefix = "§x§C§5§C§3§7§5§lC§x§C§5§C§3§7§5§ll§x§C§5§C§3§7§5§la§x§C§5§C§3§7§5§ln§x§C§5§C§3§7§5§lc§x§C§5§C§3§7§5§lh§x§C§5§C§3§7§5§la§x§C§5§C§3§7§5§lt §8▪ ";
+    final String clanChatPrefix = config.getString("ClanChatPrefix");
+    final String COMMAND_PATHS = "messages.clancommand.";
 
     @Override
     @SneakyThrows
@@ -60,7 +62,7 @@ public class ClanCommand implements CommandExecutor, TabCompleter {
 
         if (args.length == 0) {
             if (!manager.isClanMember(cSender_uuid)) {
-                sendActionBar(cSender, "§7Verwende einen Unterbefehl wie §e/clan create §c<prefix> <name>");
+                cSender.sendMessage(Main.getInstance().getPrefix() + config.getString(COMMAND_PATHS + "unterbefehl"));
             } else {
                 menus.openClanMenu(cSender);
                 library.playLibrarySound(cSender, CustomSound.CLAN_OPEN, 1f, 2f);

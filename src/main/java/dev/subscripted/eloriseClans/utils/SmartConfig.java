@@ -17,12 +17,12 @@ public class SmartConfig {
         this.file = new File(Main.getInstance().getDataFolder(), fileName);
 
         if (file.exists()) {
-            System.out.println("This configurationfile already exists: " + fileName);
+            System.out.println("This configuration file already exists: " + fileName);
         } else {
             try {
                 file.getParentFile().mkdirs();
                 if (file.createNewFile()) {
-                    System.out.println("New Configfile created: " + fileName);
+                    System.out.println("New configuration file created: " + fileName);
                 }
             } catch (IOException e) {
                 System.err.println("File could not be created: " + fileName);
@@ -36,46 +36,56 @@ public class SmartConfig {
         return new SmartConfig(fileName);
     }
 
-
     @SneakyThrows
-    private boolean isValueEqual(String path, Object value) {
+    private boolean pathExistsAndValueEqual(String path, Object value) {
+        if (!config.contains(path)) {
+            return false;
+        }
         Object currentValue = config.get(path);
         return currentValue != null && currentValue.equals(value);
     }
 
     @SneakyThrows
     public void setString(String path, String value) {
-        if (!isValueEqual(path, value)) {
-            config.set(path, value);
-            config.save(file);
-            System.out.println("New Value Saved to: " + path + " = " + value);
+        if (!pathExistsAndValueEqual(path, value)) {
+            if (!config.contains(path)) {
+                config.set(path, value);
+                config.save(file);
+                System.out.println("New value saved to: " + path + " = " + value);
+            }
         }
     }
 
     @SneakyThrows
     public void setInt(String path, int value) {
-        if (!isValueEqual(path, value)) {
-            config.set(path, value);
-            config.save(file);
-            System.out.println("New Value Saved to: " + path + " = " + value);
+        if (!pathExistsAndValueEqual(path, value)) {
+            if (!config.contains(path)) {
+                config.set(path, value);
+                config.save(file);
+                System.out.println("New value saved to: " + path + " = " + value);
+            }
         }
     }
 
     @SneakyThrows
     public void setBool(String path, boolean value) {
-        if (!isValueEqual(path, value)) {
-            config.set(path, value);
-            config.save(file);
-            System.out.println("New Value Saved to: " + path + " = " + value);
+        if (!pathExistsAndValueEqual(path, value)) {
+            if (!config.contains(path)) {
+                config.set(path, value);
+                config.save(file);
+                System.out.println("New value saved to: " + path + " = " + value);
+            }
         }
     }
 
     @SneakyThrows
     public void addList(String path, List<?> list) {
-        if (!isValueEqual(path, list)) {
-            config.set(path, list);
-            config.save(file);
-            System.out.println("New Value Saved to: " + path + " = " + list);
+        if (!pathExistsAndValueEqual(path, list)) {
+            if (!config.contains(path)) {
+                config.set(path, list);
+                config.save(file);
+                System.out.println("New value saved to: " + path + " = " + list);
+            }
         }
     }
 
@@ -93,7 +103,7 @@ public class SmartConfig {
             config.save(file);
             System.out.println("Configuration saved: " + file.getName());
         } catch (IOException e) {
-            System.err.println("Error / Waring while trying to save the Config: " + file.getName());
+            System.err.println("Error / Warning while trying to save the config: " + file.getName());
             e.printStackTrace();
         }
     }
@@ -116,10 +126,12 @@ public class SmartConfig {
 
     @SneakyThrows
     public <T> void set(String path, T value) {
-        if (!isValueEqual(path, value)) {
-            config.set(path, value);
-            config.save(file);
-            System.out.println("New value Saved to: " + path + " = " + value);
+        if (!pathExistsAndValueEqual(path, value)) {
+            if (!config.contains(path)) {
+                config.set(path, value);
+                config.save(file);
+                System.out.println("New value saved to: " + path + " = " + value);
+            }
         }
     }
 
