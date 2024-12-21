@@ -1,5 +1,6 @@
 package dev.subscripted.eloriseClans;
 
+import dev.subscripted.eloriseClans.cache.*;
 import dev.subscripted.eloriseClans.commands.ClanCommand;
 import dev.subscripted.eloriseClans.database.MySQL;
 import dev.subscripted.eloriseClans.database.connections.Coins;
@@ -10,11 +11,11 @@ import dev.subscripted.eloriseClans.manager.ClanManager;
 import dev.subscripted.eloriseClans.utils.*;
 import lombok.Getter;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -58,7 +59,7 @@ public final class Main extends JavaPlugin {
         CfC.createSomeDefaults();
         CfC.setSomeDefaults();
         config = SmartConfig.load("messages.yml");
-        prefix = config.getString("PluginPrefix");
+        prefix = config.getString(CfC.ConfigPath.PLUGIN_PREFIX.getPath());
     }
 
     /**
@@ -79,9 +80,23 @@ public final class Main extends JavaPlugin {
         library = new SoundLibrary();
         chunkCache = new ChunkCache();
 
+        // SkullTextureCache initialisieren
         Map<UUID, String> players = clanManager.fetchPlayersFromDatabase();
         SkullTextureCache.initializeCache(players);
+
+        // RankCache initialisieren
+        Map<UUID, String> ranks = clanManager.fetchRanksFromDatabase();
+        RankCache.initializeCache(ranks);
+
+        // LastJoinedCache initialisieren
+        Map<UUID, String> lastJoined = clanManager.fetchLastJoinedFromDatabase();
+        LastJoinedCache.initializeCache(lastJoined);
+
+        // PlayerNameCache initialisieren
+        List<UUID> playerUUIDs = clanManager.fetchAllPlayerUUIDs();
+        PlayerNameCache.initializeCache(playerUUIDs);
     }
+
 
     /**
      * Registriert Befehle.

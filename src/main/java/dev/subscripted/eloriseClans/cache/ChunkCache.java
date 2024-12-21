@@ -1,6 +1,7 @@
-package dev.subscripted.eloriseClans.utils;
+package dev.subscripted.eloriseClans.cache;
 
 import dev.subscripted.eloriseClans.database.MySQL;
+import dev.subscripted.eloriseClans.utils.ClanChunk;
 import lombok.AccessLevel;
 import lombok.SneakyThrows;
 import lombok.experimental.FieldDefaults;

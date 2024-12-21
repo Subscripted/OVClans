@@ -1,5 +1,9 @@
 package dev.subscripted.eloriseClans.gui;
 
+import dev.subscripted.eloriseClans.cache.LastJoinedCache;
+import dev.subscripted.eloriseClans.cache.PlayerNameCache;
+import dev.subscripted.eloriseClans.cache.RankCache;
+import dev.subscripted.eloriseClans.cache.SkullTextureCache;
 import dev.subscripted.eloriseClans.database.MySQL;
 import dev.subscripted.eloriseClans.manager.ClanManager;
 import dev.subscripted.eloriseClans.utils.*;
@@ -54,13 +58,6 @@ public class ClanMenus {
         }
         ItemBuilder corners = new ItemBuilder(Material.BLACK_STAINED_GLASS_PANE).setDisplayName(" ");
 
-        ItemBuilder clanwar = new ItemBuilder(Material.CROSSBOW).setDisplayName("§x§6§0§6§0§6§0§lC§x§7§3§6§6§5§C§ll§x§8§6§6§C§5§8§la§x§9§8§7§2§5§4§ln§x§A§B§7§8§5§1§lk§x§B§E§7§D§4§D§lr§x§D§1§8§3§4§9§li§x§E§3§8§9§4§5§le§x§F§6§8§F§4§1§lg")
-                .addLoreLine("§8» §7Der §cInhaber §7des Clans kann hier einen Clankrieg ")
-                .addLoreLine("§8| §7zwischen seinem und dem §eGegnerclan §7verwalten§8.")
-                .addLoreLine(" ")
-                .addLoreLine("§8| §7Ist der Clankrieg vorbei, werden hier die §eStatistiken §7angezeigt§8.")
-                .addLoreLine(" ")
-                .addLoreLine("§8| §8§lStatus§8 : §b§lEntwicklung...");
         ItemBuilder settings = new ItemBuilder(Material.REPEATER).setDisplayName("§x§F§A§4§7§4§7§lE§x§F§6§4§E§4§E§li§x§F§3§5§5§5§5§ln§x§E§F§5§C§5§C§ls§x§E§C§6§3§6§3§lt§x§E§8§6§A§6§A§le§x§E§5§7§1§7§1§ll§x§E§1§7§8§7§8§ll§x§D§D§7§F§7§F§lu§x§D§A§8§6§8§6§ln§x§D§6§8§D§8§D§lg§x§D§3§9§4§9§4§le§x§C§F§9§B§9§B§ln")
                 .addLoreLine("§8» §7Der §cInhaber §7des Clans kann hier den §eClan §7verwalten§8. ")
                 .addLoreLine(" ")
@@ -97,7 +94,6 @@ public class ClanMenus {
         // Menü erstellen
         InventoryAdvancer.makePattern(inventory, pattern);
         InventoryAdvancer.fillCorners(inventory, corners);
-        inventory.setItem(13, clanwar.build());
         inventory.setItem(14, settings.build());
         inventory.setItem(22, bank.build());
         inventory.setItem(11, clanMember.build());
@@ -124,12 +120,21 @@ public class ClanMenus {
         ItemBuilder claimborders = new ItemBuilder(Material.GLOWSTONE_DUST).setDisplayName("§6§lClaim-Border")
                 .addLoreLine(clanManager.isClanBorderShown(clanPrefix) ? "§aAktiv" : "§cAus");
 
+        ItemBuilder clancolor = new ItemBuilder(Material.LOOM).setDisplayName("§x§F§F§0§0§0§0§lC§x§F§F§7§F§0§0§ll§x§F§F§B§F§0§0§la§x§F§F§F§F§0§0§ln§x§0§0§F§F§0§0§lf§x§0§0§0§0§F§F§la§x§2§6§0§0§C§1§lr§x§4§B§0§0§8§2§lb§x§9§4§0§0§D§3§le")
+                .addLoreLine("§8» §7Der §cInhaber §7des Clans kann hier einen Clankrieg ")
+                .addLoreLine("§8| §7zwischen seinem und dem §eGegnerclan §7verwalten§8.")
+                .addLoreLine(" ")
+                .addLoreLine("§8| §7Ist der Clankrieg vorbei, werden hier die §eStatistiken §7angezeigt§8.")
+                .addLoreLine(" ")
+                .addLoreLine("§8| §8§lStatus§8 : §b§lEntwicklung...");
+
         InventoryAdvancer.fillCorners(inventory, corners);
         InventoryAdvancer.makePattern(inventory, fill);
         inventory.setItem(49, backitem());
         inventory.setItem(15, pvp.build());
         inventory.setItem(14, claimborders.build());
         inventory.setItem(40, deleteclan.build());
+        inventory.setItem(42, clancolor.build());
         inventory.setItem(38, member.build());
         setClanSettingsMiddle(inventory, fill);
 
@@ -340,12 +345,15 @@ public class ClanMenus {
             default -> ownerRank;
         };
 
+
+        String lastJoinedOwner = LastJoinedCache.getLastJoined(clanOwnerUUID);
+
         ItemBuilder ownerHead = new ItemBuilder(Material.PLAYER_HEAD)
                 .setDisplayName(clanOwnerName != null ? "§7" + clanOwnerName : "§7Unknown")
                 .setSkullTexture(SkullTextureCache.getSkullTexture(clanOwnerUUID))
                 .addLoreLine("§8» §7Rank: " + ownerRank)
                 .addLoreLine("§8» §7Status: " + (isPlayerOnline(clanOwnerUUID) ? "§aOnline" : "§cOffline"))
-                .addLoreLine("§8» §7Zuletzt: §e" + (isPlayerOnline(clanOwnerUUID) ? "§aAktiv" : clanManager.getLastSeen(clanOwnerUUID)));
+                .addLoreLine("§8» §7Zuletzt: §e" + (isPlayerOnline(clanOwnerUUID) ? "§aAktiv" : lastJoinedOwner));
         inventory.setItem(13, ownerHead.build());
 
         clanMembers.remove(clanOwnerUUID);
@@ -359,9 +367,9 @@ public class ClanMenus {
                 break;
             }
 
-            // Namen und Rang des Mitglieds abrufen
-            String memberName = UUIDFetcher.getName(memberUUID);
-            String memberRank = clanManager.getMemberRank(memberUUID, clanPrefix);
+
+            String memberName = PlayerNameCache.getPlayerName(memberUUID);
+            String memberRank = RankCache.getRank(memberUUID);
 
             // Rang formatieren
             memberRank = switch (memberRank) {
@@ -376,12 +384,16 @@ public class ClanMenus {
             String skullTexture = SkullTextureCache.getSkullTexture(memberUUID);
 
             // Spieler-Kopf erstellen
+
+
+            String lastJoined = LastJoinedCache.getLastJoined(memberUUID);
+
             ItemBuilder memberHead = new ItemBuilder(Material.PLAYER_HEAD)
                     .setDisplayName(memberName != null ? "§7" + memberName : "§7Unknown")
                     .setSkullTexture(skullTexture) // Textur statt Name verwenden
                     .addLoreLine("§8» §7Rank: " + memberRank)
                     .addLoreLine("§8» §7Status: " + (isPlayerOnline(memberUUID) ? "§aOnline" : "§cOffline"))
-                    .addLoreLine("§8» §7Zuletzt: §e" + (isPlayerOnline(memberUUID) ? "§aAktiv" : clanManager.getLastSeen(memberUUID)));
+                    .addLoreLine("§8» §7Zuletzt: §e" + (isPlayerOnline(memberUUID) ? "§aAktiv" : lastJoined ));
 
             // Item in das Inventar setzen
             inventory.setItem(memberSlots[slotIndex], memberHead.build());
@@ -410,7 +422,7 @@ public class ClanMenus {
         ItemBuilder memberHead = new ItemBuilder(Material.PLAYER_HEAD)
                 .setDisplayName(memberName != null ? "§7" + memberName : "§7Unknown")
                 .setSkullTexture(SkullTextureCache.getSkullTexture(memberUUID)) // Texture aus dem Cache
-                .addLoreLine(memberRank);
+                .addLoreLine("§8» §7Rank: " + memberRank);
 
         // Weitere Items
         ItemBuilder pattern = new ItemBuilder(Material.PINK_STAINED_GLASS_PANE).setDisplayName("");

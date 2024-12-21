@@ -1,13 +1,13 @@
 package dev.subscripted.eloriseClans.manager;
 
 import dev.subscripted.eloriseClans.Main;
+import dev.subscripted.eloriseClans.cache.RankCache;
 import dev.subscripted.eloriseClans.database.MySQL;
-import dev.subscripted.eloriseClans.utils.ChunkCache;
+import dev.subscripted.eloriseClans.cache.ChunkCache;
 import dev.subscripted.eloriseClans.settings.ChunkVisualizer;
 import dev.subscripted.eloriseClans.utils.ClanChunk;
-import dev.subscripted.eloriseClans.utils.SkullTextureCache;
+import dev.subscripted.eloriseClans.cache.SkullTextureCache;
 import dev.subscripted.eloriseClans.utils.UUIDFetcher;
-import it.unimi.dsi.fastutil.Pair;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -87,6 +87,7 @@ public class ClanManager {
             stmt.setString(2, memberUUID.toString());
             stmt.executeUpdate();
         }
+        RankCache.removeFromCache(memberUUID);
     }
 
     @SneakyThrows
@@ -502,6 +503,7 @@ public class ClanManager {
             stmt.setString(3, clanPrefix);
             stmt.executeUpdate();
         }
+        RankCache.updateCache(memberUUID, rank);
     }
 
     @SneakyThrows
@@ -714,6 +716,83 @@ public class ClanManager {
         }
         return players;
     }
+
+
+    public Map<UUID, String> fetchRanksFromDatabase() {
+        Map<UUID, String> ranks = new HashMap<>();
+        String query = "SELECT MemberUUID, Rank FROM ClanMembers";
+
+        try (Connection connection = MySQL.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query);
+             ResultSet resultSet = statement.executeQuery()) {
+
+            while (resultSet.next()) {
+                UUID uuid = UUID.fromString(resultSet.getString("MemberUUID"));
+                ranks.put(uuid, resultSet.getString("Rank"));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return ranks;
+    }
+    public Map<UUID, String> fetchLastJoinedFromDatabase() {
+        Map<UUID, String> lastJoined = new HashMap<>();
+        String query = "SELECT MemberUUID, lastSeen FROM ClanMembers";
+
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm");
+
+        try (Connection connection = MySQL.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query);
+             ResultSet resultSet = statement.executeQuery()) {
+
+            while (resultSet.next()) {
+                UUID uuid = UUID.fromString(resultSet.getString("MemberUUID"));
+                Timestamp lastSeenTimestamp = resultSet.getTimestamp("lastSeen");
+
+                String formattedLastSeen = dateFormat.format(lastSeenTimestamp);
+                lastJoined.put(uuid, formattedLastSeen);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return lastJoined;
+    }
+
+
+    public Map<UUID, String> fetchPlayerNamesFromDatabase() {
+        Map<UUID, String> playerNames = new HashMap<>();
+        String query = "SELECT MemberUUID, PlayerName FROM ClanMembers";
+
+        try (Connection connection = MySQL.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query);
+             ResultSet resultSet = statement.executeQuery()) {
+
+            while (resultSet.next()) {
+                UUID uuid = UUID.fromString(resultSet.getString("MemberUUID"));
+                playerNames.put(uuid, resultSet.getString("PlayerName"));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return playerNames;
+    }
+    public List<UUID> fetchAllPlayerUUIDs() {
+        List<UUID> uuids = new ArrayList<>();
+        String query = "SELECT MemberUUID FROM ClanMembers";
+
+        try (Connection connection = MySQL.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query);
+             ResultSet resultSet = statement.executeQuery()) {
+
+            while (resultSet.next()) {
+                uuids.add(UUID.fromString(resultSet.getString("MemberUUID")));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return uuids;
+    }
+
 
 }
 

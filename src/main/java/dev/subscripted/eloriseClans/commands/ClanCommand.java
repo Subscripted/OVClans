@@ -1,6 +1,7 @@
 package dev.subscripted.eloriseClans.commands;
 
 import dev.subscripted.eloriseClans.Main;
+import dev.subscripted.eloriseClans.cache.SkullTextureCache;
 import dev.subscripted.eloriseClans.database.connections.Coins;
 import dev.subscripted.eloriseClans.gui.ClanMenus;
 import dev.subscripted.eloriseClans.manager.ClanManager;
@@ -33,13 +34,13 @@ public class ClanCommand implements CommandExecutor, TabCompleter {
     final ClanManager manager;
     final ClanMenus menus;
     final SoundLibrary library;
-    final SmartConfig config = SmartConfig.load("messages.yml");
+    final SmartConfig MessageConfig = SmartConfig.load("messages.yml");
+    final SmartConfig GeneralConfig = SmartConfig.load("general.yml");
 
     static final Pattern VALID_CLAN_PREFIX_PATTERN = Pattern.compile("^[a-zA-Z&]*$");
     static final Pattern VALID_CLAN_NAME_PATTERN = Pattern.compile("^[a-zA-Z& ]*$");
     final Map<UUID, BukkitRunnable> inviteTasks = new HashMap<>();
-    final String clanChatPrefix = config.getString("ClanChatPrefix");
-    final String COMMAND_PATHS = "messages.clancommand.";
+    final String clanChatPrefix = MessageConfig.getString("ClanChatPrefix");
 
     @Override
     @SneakyThrows
@@ -50,11 +51,12 @@ public class ClanCommand implements CommandExecutor, TabCompleter {
         }
 
 
-
         Player cSender = (Player) sender;
         UUID cSender_uuid = cSender.getUniqueId();
         Coins coins = Main.getInstance().getCoins();
-        int buyprice = 50000;
+
+
+        int buyprice = GeneralConfig.getInt(CfC.ConfigPath.CLAN_PRICE.getPath());
 
 
         List<UUID> clanMembers = manager.getClanMembers(getClanPrefix(cSender));
@@ -62,7 +64,7 @@ public class ClanCommand implements CommandExecutor, TabCompleter {
 
         if (args.length == 0) {
             if (!manager.isClanMember(cSender_uuid)) {
-                cSender.sendMessage(Main.getInstance().getPrefix() + config.getString(COMMAND_PATHS + "unterbefehl"));
+                cSender.sendMessage(Main.getInstance().getPrefix() + MessageConfig.getString(CfC.ConfigPath.MESSAGES_COMMAND_UNTERBEFEHL.getPath()));
             } else {
                 menus.openClanMenu(cSender);
                 library.playLibrarySound(cSender, CustomSound.CLAN_OPEN, 1f, 2f);
@@ -81,7 +83,7 @@ public class ClanCommand implements CommandExecutor, TabCompleter {
                         String clanNameStripped = ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&', clanName));
 
                         if (clanPrefix.length() > 12 || clanNameStripped.length() > 12) {
-                            sendActionBar(cSender, "§7Der Clan-Prefix und Name dürfen maximal 12 Zeichen lang sein!");
+                            cSender.sendMessage(Main.getInstance().getPrefix(), "§7Der Clan-Prefix und Name dürfen maximal 12 Zeichen lang sein!");
                             library.playLibrarySound(cSender, CustomSound.NO_PERMISSION, 1f, 1f);
                             return true;
                         }
@@ -119,7 +121,7 @@ public class ClanCommand implements CommandExecutor, TabCompleter {
                         coins.removeCoins(cSender_uuid, buyprice);
                         sendActionBar(cSender, "§7Du hast erfolgreich deinen Clan gegründet! §8(§7Name: " + ChatColor.translateAlternateColorCodes('&', clanName) + " §8| §7Prefix: §e" + clanPrefix + "§8)");
                         manager.startShowingClaims(cSender, getClanPrefix(cSender));
-                        library.playLibrarySound(cSender, CustomSound.SUCCESSFULL, 1f, 1f);
+                        library.playLibrarySound(cSender, CustomSound.MEMORY3, 1f, 2f);
                     } else {
                         sendActionBar(cSender, "§7Benutze §e/clan create §c<prefix> <name>");
                         library.playLibrarySound(cSender, CustomSound.WRONG_USAGE, 1f, 1f);
@@ -300,7 +302,7 @@ public class ClanCommand implements CommandExecutor, TabCompleter {
                 case "claim":
                     if (manager.isClanMember(cSender_uuid) && manager.getMemberRank(cSender_uuid, getClanPrefix(cSender)).equals("Owner")) {
                         manager.claimChunk(cSender, getClanPrefix(cSender));
-                    } else{
+                    } else {
                         cSender.sendMessage(Main.getInstance().getPrefix() + "§7Du bist in keinem Clan!");
                     }
                     break;

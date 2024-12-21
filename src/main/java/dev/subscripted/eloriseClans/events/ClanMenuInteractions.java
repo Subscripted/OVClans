@@ -80,8 +80,6 @@ public class ClanMenuInteractions implements Listener {
                         library.playLibrarySound(player, CustomSound.PAGE_TURN, 1f, 2f);
                         break;
                     case 13:
-                        menus.openClanWarMenu(player);
-                        library.playLibrarySound(player, CustomSound.PAGE_TURN, 1f, 2f);
                         break;
                 }
             }
@@ -231,7 +229,7 @@ public class ClanMenuInteractions implements Listener {
             if (slot >= 21 && slot <= 34) {
                 UUID memberUUID = getMemberUUIDFromHead(clickedItem);
                 if (memberUUID != null) {
-                    if (clanManager.isClanOwner(uuid)) {
+                    if (clanManager.isClanOwner(uuid) || (clanManager.hasMemberRank(uuid, clanPrefix, "Vize") && !memberUUID.equals(uuid) && !clanManager.hasMemberRank(memberUUID, clanPrefix, "Vize"))) {
                         player.setMetadata("memberUUID", new FixedMetadataValue(Main.getInstance(), memberUUID.toString()));
                         menus.openMemberManager(player, memberUUID);
                         library.playLibrarySound(player, CustomSound.PAGE_TURN, 1f, 2f);
@@ -253,9 +251,11 @@ public class ClanMenuInteractions implements Listener {
                         if (clanManager.isClanOwner(player.getUniqueId())) {
                             String currentRank = clanManager.getMemberRank(memberUUID, clanPrefix);
                             String nextRank = getNextRank(currentRank);
+
                             if (nextRank.equalsIgnoreCase("Owner")) {
                                 clanManager.setMemberRank(memberUUID, clanPrefix, "Owner");
                                 clanManager.setMemberRank(player.getUniqueId(), clanPrefix, "Vize");
+
                                 for (Player p : Bukkit.getServer().getOnlinePlayers()) {
                                     if (clanManager.isMemberOfClan(p.getUniqueId(), clanPrefix)) {
                                         library.playLibrarySound(p, CustomSound.UPGRADING, 1f, 2f);
@@ -275,10 +275,30 @@ public class ClanMenuInteractions implements Listener {
                             menus.openClanMemberMenu(player);
                             library.playLibrarySound(player, CustomSound.PAGE_TURN, 1f, 2f);
                             player.removeMetadata("memberUUID", Main.getInstance());
+                        } else if (clanManager.hasMemberRank(player.getUniqueId(), clanPrefix, "Vize")) {
+                            String currentRank = clanManager.getMemberRank(memberUUID, clanPrefix);
+                            String nextRank = getNextRank(currentRank);
+
+                            if (nextRank.equalsIgnoreCase("Vize") || nextRank.equalsIgnoreCase("Owner")) {
+                                player.sendMessage(Main.getInstance().getPrefix() + "§cDu darfst dieses Mitglied nicht höher als 'Ältester' befördern.");
+                                library.playLibrarySound(player, CustomSound.NOT_ALLOWED, 1f, 1f);
+                                break;
+                            }
+
+                            clanManager.setMemberRank(memberUUID, clanPrefix, nextRank);
+                            player.sendMessage(Main.getInstance().getPrefix() + "§7Du hast §e" + UUIDFetcher.getName(memberUUID) + " §7zum " + nextRank
+                                    .replace("Ältester", "§6Ältester§r")
+                                    .replace("Vize", "§cVize§r") + " §7befördert.");
+                            library.playLibrarySound(player, CustomSound.SUCCESSFULL, 1f, 2f);
+
+                            menus.openClanMemberMenu(player);
+                            library.playLibrarySound(player, CustomSound.PAGE_TURN, 1f, 2f);
+                            player.removeMetadata("memberUUID", Main.getInstance());
                         } else {
                             player.sendMessage(Main.getInstance().getPrefix() + "§cDu hast keine Berechtigung, dieses Mitglied zu befördern.");
                         }
                         break;
+
 
                     case 31:
                         if (clanManager.isClanOwner(player.getUniqueId())) {

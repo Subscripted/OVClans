@@ -1,4 +1,4 @@
-package dev.subscripted.eloriseClans.utils;
+package dev.subscripted.eloriseClans.cache;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;

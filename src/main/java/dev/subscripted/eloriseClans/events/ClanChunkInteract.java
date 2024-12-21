@@ -1,7 +1,7 @@
 package dev.subscripted.eloriseClans.events;
 
 import dev.subscripted.eloriseClans.manager.ClanManager;
-import dev.subscripted.eloriseClans.utils.ChunkCache;
+import dev.subscripted.eloriseClans.cache.ChunkCache;
 import dev.subscripted.eloriseClans.utils.ClanChunk;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
