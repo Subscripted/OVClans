@@ -20,6 +20,9 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.*;
 
 @FieldDefaults(level = AccessLevel.PRIVATE)
@@ -52,18 +55,22 @@ public class ClanMenus {
         int clanLevel = clanManager.getClanLevel(clanPrefix);
         String levelTexture = CLAN_LEVEL_ICONS.getOrDefault(clanLevel, CLAN_LEVEL_ICONS.get(1));
 
-        ItemBuilder pattern = new ItemBuilder(Material.PURPLE_STAINED_GLASS_PANE).setDisplayName(" ");
-        if (clanLevel == 6) {
+        ItemBuilder pattern = new ItemBuilder(Material.WHITE_STAINED_GLASS_PANE).setDisplayName(" ");
+        if (clanLevel == 10) {
             pattern.addEnchant(Enchantment.SILK_TOUCH, 1).addItemFlag(ItemFlag.HIDE_ENCHANTS);
         }
         ItemBuilder corners = new ItemBuilder(Material.BLACK_STAINED_GLASS_PANE).setDisplayName(" ");
+
+        ItemBuilder topclans = new ItemBuilder(Material.PLAYER_HEAD).setDisplayName("§x§F§E§C§B§5§A§lB§x§F§1§B§9§5§4§le§x§E§3§A§7§4§E§ls§x§D§6§9§5§4§7§lt§x§C§8§8§3§4§1§le§x§B§B§7§1§3§B§ln §x§A§0§4§D§2§F§lC§x§9§2§3§B§2§9§ll§x§8§5§2§9§2§2§la§x§7§7§1§7§1§C§ln§x§6§A§0§5§1§6§ls").setSkullTexture(topclans());
+
+        ItemBuilder clanshop = new ItemBuilder(Material.PLAYER_HEAD).setSkullTexture(clanshop()).setDisplayName("§x§F§E§6§8§5§A§lC§x§E§9§5§A§5§0§ll§x§D§4§4§C§4§7§la§x§B§F§3§E§3§D§ln§x§A§9§2§F§3§3§ls§x§9§4§2§1§2§9§lh§x§7§F§1§3§2§0§lo§x§6§A§0§5§1§6§lp");
 
         ItemBuilder settings = new ItemBuilder(Material.REPEATER).setDisplayName("§x§F§A§4§7§4§7§lE§x§F§6§4§E§4§E§li§x§F§3§5§5§5§5§ln§x§E§F§5§C§5§C§ls§x§E§C§6§3§6§3§lt§x§E§8§6§A§6§A§le§x§E§5§7§1§7§1§ll§x§E§1§7§8§7§8§ll§x§D§D§7§F§7§F§lu§x§D§A§8§6§8§6§ln§x§D§6§8§D§8§D§lg§x§D§3§9§4§9§4§le§x§C§F§9§B§9§B§ln")
                 .addLoreLine("§8» §7Der §cInhaber §7des Clans kann hier den §eClan §7verwalten§8. ")
                 .addLoreLine(" ")
                 .addLoreLine("§8| §aMitglieder§7, §aClan§7, §aLöschen");
 
-        // Clanbank-Icon
+
         ItemBuilder bank = new ItemBuilder(Material.PLAYER_HEAD)
                 .setSkullTexture("eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvOWZkMTA4MzgzZGZhNWIwMmU4NjYzNTYwOTU0MTUyMGU0ZTE1ODk1MmQ2OGMxYzhmOGYyMDBlYzdlODg2NDJkIn19fQ==")
                 .setDisplayName("§x§E§9§F§A§4§7§lClanbank")
@@ -74,13 +81,11 @@ public class ClanMenus {
                 .addLoreLine(" ")
                 .addLoreLine("§8| §7Deine Berechtigungen : " + (clanManager.isClanMember(player.getUniqueId()) ? "§aEinzahlen" : "§a§mEinzahlen") + " §8| " + (clanManager.isClanOwner(player.getUniqueId()) ? "§eAuszahlen" : "§e§mAuszahlen"));
 
-        // Mitglieder-Icon
         UUID clanOwnerUUID = clanManager.getClanOwner("Owner", clanPrefix);
         ItemBuilder clanMember = new ItemBuilder(Material.PLAYER_HEAD)
                 .setDisplayName("§b§lMitglieder")
                 .setSkullTexture(SkullTextureCache.getSkullTexture(clanOwnerUUID));
 
-        // Clan-Level-Icon
         ItemBuilder clanLevelItem = new ItemBuilder(Material.PLAYER_HEAD)
                 .setSkullTexture(levelTexture)
                 .setDisplayName("§x§6§E§F§A§4§7§lClanlevel")
@@ -91,13 +96,14 @@ public class ClanMenus {
                 .addLoreLine("§8| §7Der §cInhaber §7kann das Clanlevel §aweiterentwickeln.")
                 .addLoreLine("§8| §7Deine Berechtigungen : " + (clanManager.isClanOwner(player.getUniqueId()) ? "§aZugriff" : "§cKeinen Zugriff"));
 
-        // Menü erstellen
         InventoryAdvancer.makePattern(inventory, pattern);
         InventoryAdvancer.fillCorners(inventory, corners);
-        inventory.setItem(14, settings.build());
-        inventory.setItem(22, bank.build());
+        inventory.setItem(15, settings.build());
+        inventory.setItem(40, bank.build());
+        inventory.setItem(42, topclans.build());
         inventory.setItem(11, clanMember.build());
-        inventory.setItem(40, clanLevelItem.build());
+        inventory.setItem(38, clanshop.build());
+        inventory.setItem(13, clanLevelItem.build());
         player.openInventory(inventory);
     }
 
@@ -192,12 +198,16 @@ public class ClanMenus {
 
         Material glassMaterial = switch (level) {
             case 1 -> Material.LIME_STAINED_GLASS_PANE;
-            case 2 -> Material.GREEN_STAINED_GLASS_PANE;
-            case 3 -> Material.BLUE_STAINED_GLASS_PANE;
-            case 4 -> Material.LIGHT_BLUE_STAINED_GLASS_PANE;
-            case 5 -> Material.CYAN_STAINED_GLASS_PANE;
-            case 6 -> Material.ORANGE_STAINED_GLASS_PANE;
-            default -> Material.WHITE_STAINED_GLASS_PANE;
+            case 2 -> Material.YELLOW_STAINED_GLASS_PANE;
+            case 3 -> Material.GREEN_STAINED_GLASS_PANE;
+            case 4 -> Material.BLUE_STAINED_GLASS_PANE;
+            case 5 -> Material.LIGHT_BLUE_STAINED_GLASS_PANE;
+            case 6 -> Material.CYAN_STAINED_GLASS_PANE;
+            case 7 -> Material.ORANGE_STAINED_GLASS_PANE;
+            case 8 -> Material.RED_STAINED_GLASS_PANE;
+            case 9 -> Material.PURPLE_STAINED_GLASS_PANE;
+            case 10 -> Material.WHITE_STAINED_GLASS_PANE;
+            default -> Material.BARRIER;
         };
 
         ItemBuilder pattern = new ItemBuilder(glassMaterial).setDisplayName(" ");
@@ -209,7 +219,7 @@ public class ClanMenus {
         ItemBuilder clanLevelItem = new ItemBuilder(Material.PLAYER_HEAD).setSkullTexture(levelTexture).setDisplayName("§a§lLevel");
         ItemBuilder upgrade = new ItemBuilder(Material.PLAYER_HEAD).setSkullTexture(upgrade());
 
-        if (level == 6) {
+        if (level == 10) {
             upgrade.setDisplayName("§c§l§mUpgrade")
                     .addLoreLine("§8» §7Hier hast du die §eMöglichkeit §7das §eLevel §7deines §eClans §7zu §aerhöhen§8.")
                     .addLoreLine(" ")
@@ -227,10 +237,10 @@ public class ClanMenus {
 
         inventory.setItem(13, clanLevelItem.build());
 
-        for (int i = 2; i <= 6; i++) {
+        for (int i = 2; i <= 10; i++) {
             ItemBuilder shard = new ItemBuilder(Material.NETHERITE_UPGRADE_SMITHING_TEMPLATE).setDisplayName("§e§lLevel " + i).addItemFlag(ItemFlag.HIDE_ATTRIBUTES).addItemFlag(ItemFlag.HIDE_ITEM_SPECIFICS)
-                    .addLoreLine("§8§l» §c§l\uD83D\uDDE1§7 : §e" + DamageModifier.getDamageMultiplier(i))
-                    .addLoreLine(" ");
+                    .addLoreLine("§8§l» §c§l\uD83D\uDDE1§7 : §e" + ClanLevelModifier.getDamageMultiplier(i))
+                    .addLoreLine("§8§l» §7Chunks: + " + clanManager.getChunksForNextLevel(i));
 
             if (i <= level) {
                 shard.addLoreLine("§aFreigeschaltet");
@@ -253,6 +263,7 @@ public class ClanMenus {
             case 3 -> 600000;
             case 4 -> 700000;
             case 5 -> 1200000;
+            case 6 -> 2000000;
             default -> 0;
         };
     }
@@ -393,7 +404,7 @@ public class ClanMenus {
                     .setSkullTexture(skullTexture) // Textur statt Name verwenden
                     .addLoreLine("§8» §7Rank: " + memberRank)
                     .addLoreLine("§8» §7Status: " + (isPlayerOnline(memberUUID) ? "§aOnline" : "§cOffline"))
-                    .addLoreLine("§8» §7Zuletzt: §e" + (isPlayerOnline(memberUUID) ? "§aAktiv" : lastJoined ));
+                    .addLoreLine("§8» §7Zuletzt: §e" + (isPlayerOnline(memberUUID) ? "§aAktiv" : lastJoined));
 
             // Item in das Inventar setzen
             inventory.setItem(memberSlots[slotIndex], memberHead.build());
@@ -460,11 +471,34 @@ public class ClanMenus {
 
 
     @SneakyThrows
-    public void openClanWarMenu(Player player) {
-        Inventory inventory = Bukkit.createInventory(player, 5 * 9, "§x§6§0§6§0§6§0§lClankrieg §8» §7Verwaltung");
+    public void openTopClans(Player player) {
+        Inventory inventory = Bukkit.createInventory(player, 6 * 9, "§x§6§0§6§0§6§0§lClan §8» §x§F§E§C§B§5§A§lB§x§F§1§B§9§5§4§le§x§E§3§A§7§4§E§ls§x§D§6§9§5§4§7§lt§x§C§8§8§3§4§1§le§x§B§B§7§1§3§B§ln §x§A§0§4§D§2§F§lC§x§9§2§3§B§2§9§ll§x§8§5§2§9§2§2§la§x§7§7§1§7§1§C§ln§x§6§A§0§5§1§6§ls §8| §x§6§0§6§0§6§0§lTop");
+
+        List<Map<String, Object>> topClans = clanManager.getTop5Clans();
+
+        int[] pyramidSlots = {13, 21, 23, 29, 31};
+        for (int i = 0; i < topClans.size(); i++) {
+            Map<String, Object> clan = topClans.get(i);
+            UUID ownerUUID = clanManager.getClanOwnerUUID((String) clan.get("ClanPrefix"));
+            String skullTexture = SkullTextureCache.getSkullTexture(ownerUUID);
+
+            ItemBuilder corner = new ItemBuilder(Material.GRAY_STAINED_GLASS_PANE).setDisplayName("");
+            ItemBuilder filler = new ItemBuilder(Material.BROWN_STAINED_GLASS_PANE).setDisplayName("");
+
+            ItemBuilder topclans = new ItemBuilder(Material.PLAYER_HEAD)
+                    .setSkullTexture(skullTexture)
+                    .setDisplayName("§7Platz: §e" + (i + 1))
+                    .addLoreLine("§8» §7Clan: " + clan.get("ClanName"))
+                    .addLoreLine("§8» §7Level: §e" + clan.get("ClanLevel"))
+                    .addLoreLine("§8» §7Mitglieder: §e" + clan.get("Members"));
+
+            InventoryAdvancer.makePattern(inventory, filler);
+            InventoryAdvancer.fillCorners(inventory, corner);
+            inventory.setItem(pyramidSlots[i], topclans.build());
+            inventory.setItem(49, backitem());
+        }
 
         player.openInventory(inventory);
-
     }
 
 
@@ -496,13 +530,17 @@ public class ClanMenus {
     }
 
     public void setLevelItemShard(Inventory inventory, ItemBuilder item, int index) {
-        int[] slots = {38, 39, 40, 41, 42};
+        int[] slots = {46, 47, 48, 39, 40, 41, 50, 51, 52};
         if (index < slots.length) {
             int slot = slots[index];
             if (slot < inventory.getSize()) {
                 inventory.setItem(slot, item.build());
             }
         }
+    }
+
+    private String topclans(){
+        return "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYmI1ZDhiOWEzYTk0MjFkY2VkYjE3ZDcxZTNhODg0ZDk1ZWM1MDM4YzgzOGNlMTllZDZkOGU5NmM1YjIzZWQ3In19fQ==";
     }
 
     private String backHeadValue() {
@@ -540,6 +578,10 @@ public class ClanMenus {
 
     private String demote() {
         return "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvOGM4OWFhMjljYjUwMzU5YzlhYzU3M2U4NmM4ZWIwNzIxMTk3Nzk2Y2ZhYjQzZmY1Y2UxNzMzODViOWRmMmVkMSJ9fX0=";
+    }
+
+    private String clanshop() {
+        return "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZjI3ODQzMDdiODkyZjUyYjkyZjc0ZmE5ZGI0OTg0YzRmMGYwMmViODFjNjc1MmU1ZWJhNjlhZDY3ODU4NDI3ZSJ9fX0=";
     }
 
     public boolean isPlayerOnline(UUID playerUUID) {

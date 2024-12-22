@@ -1,7 +1,7 @@
 package dev.subscripted.eloriseClans.events;
 
 import dev.subscripted.eloriseClans.manager.ClanManager;
-import dev.subscripted.eloriseClans.utils.DamageModifier;
+import dev.subscripted.eloriseClans.utils.ClanLevelModifier;
 import dev.subscripted.eloriseClans.utils.SoundLibrary;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -13,7 +13,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 
-import java.util.Random;
 import java.util.UUID;
 
 @RequiredArgsConstructor
@@ -34,7 +33,7 @@ public class LevelAbs implements Listener {
             Player attacker = (Player) damager;
             int clanLevel = getClanLevel(attacker);
 
-            double damageMultiplier = DamageModifier.getDamageMultiplier(clanLevel);
+            double damageMultiplier = ClanLevelModifier.getDamageMultiplier(clanLevel);
 
             double originalDamage = event.getDamage();
             double increasedDamage = originalDamage * damageMultiplier;

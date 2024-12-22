@@ -59,9 +59,6 @@ public class ClanCommand implements CommandExecutor, TabCompleter {
         int buyprice = GeneralConfig.getInt(CfC.ConfigPath.CLAN_PRICE.getPath());
 
 
-        List<UUID> clanMembers = manager.getClanMembers(getClanPrefix(cSender));
-        SkullTextureCache.updateCacheForClan(clanMembers);
-
         if (args.length == 0) {
             if (!manager.isClanMember(cSender_uuid)) {
                 cSender.sendMessage(Main.getInstance().getPrefix() + MessageConfig.getString(CfC.ConfigPath.MESSAGES_COMMAND_UNTERBEFEHL.getPath()));
@@ -76,6 +73,8 @@ public class ClanCommand implements CommandExecutor, TabCompleter {
         try {
             switch (subcommand) {
                 case "create":
+                    List<UUID> clanMembers = manager.getClanMembers(getClanPrefix(cSender));
+                    SkullTextureCache.updateCacheForClan(clanMembers);
                     if (args.length == 3) {
                         String clanPrefix = args[1];
                         String clanName = args[2];
@@ -132,6 +131,7 @@ public class ClanCommand implements CommandExecutor, TabCompleter {
                     if (clanInfo != null) {
                         sendActionBar(cSender, "§7Du bist in diesem Clan: §e" + ChatColor.translateAlternateColorCodes('&', clanInfo.replace("-", "|")));
                         library.playLibrarySound(cSender, CustomSound.LOADING_FINISHED, 1f, 1f);
+                        menus.openTopClans(cSender);
                     } else {
                         sendActionBar(cSender, "§7Du bist in keinem Clan!");
                         library.playLibrarySound(cSender, CustomSound.NO_PERMISSION, 1f, 1f);
@@ -239,7 +239,12 @@ public class ClanCommand implements CommandExecutor, TabCompleter {
                     if (args.length == 2) {
                         String targetPlayerName = args[1];
                         Player targetPlayer = Bukkit.getPlayer(targetPlayerName);
-
+                        int maxPlayer = 11;
+                        if (manager.getClanMembers(getClanPrefix(cSender)).size() == maxPlayer){
+                            cSender.sendMessage(Main.getInstance().getPrefix() + "§7Dein §eClan §7hat schon die §cMaximalanzahl §7an §eMembern§7!");
+                            library.playLibrarySound(cSender, CustomSound.NOT_ALLOWED, 1f, 1f);
+                            return true;
+                        }
                         // Prüfen, ob der Spieler im gleichen Clan ist
                         String playerClan = manager.getMemberClan(cSender_uuid);
                         if (playerClan == null) {

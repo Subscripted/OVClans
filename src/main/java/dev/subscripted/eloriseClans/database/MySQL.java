@@ -43,7 +43,6 @@ public class MySQL {
 
         try {
             connection = DriverManager.getConnection("jdbc:mysql://" + host + ":" + port + "/" + database, username, password);
-            Main.getInstance().getLogger().info(Main.getInstance().getPrefix() + "MySQL connected!");
         } catch (SQLException e) {
             Main.getInstance().getLogger().info(Main.getInstance().getPrefix() + "MySQL Connection could not be established. Check your MySQL configuration.");
             e.printStackTrace();
@@ -76,6 +75,7 @@ public class MySQL {
                                 "ClanPrefix VARCHAR(50) PRIMARY KEY, " +
                                 "ClanName VARCHAR(255) NOT NULL, " +
                                 "ClanLevel INT NOT NULL," +
+                                "Chunks INT DEFAULT 4," +
                                 "ClanbankEco INT DEFAULT 0)"
                 );
                 connection.createStatement().executeUpdate(

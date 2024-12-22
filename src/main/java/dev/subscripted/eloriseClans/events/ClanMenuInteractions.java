@@ -50,11 +50,11 @@ public class ClanMenuInteractions implements Listener {
         int level = clanManager.getClanLevel(clanPrefix);
 
 
-        if (title.startsWith("§x§6§0§6§0§6§0§lClan §8»") && !title.endsWith(" §8| §x§6§0§6§0§6§0§lLevel: §e" + level) && !title.endsWith(" §8| §x§6§0§6§0§6§0§lMitglieder") && !title.endsWith(" §8| §x§6§0§6§0§6§0§lEinstellungen")) {
+        if (title.startsWith("§x§6§0§6§0§6§0§lClan §8»") && !title.endsWith(" §8| §x§6§0§6§0§6§0§lLevel: §e" + level) && !title.endsWith(" §8| §x§6§0§6§0§6§0§lMitglieder") && !title.endsWith(" §8| §x§6§0§6§0§6§0§lEinstellungen") && !title.equals("§x§6§0§6§0§6§0§lClan §8» §x§F§E§C§B§5§A§lB§x§F§1§B§9§5§4§le§x§E§3§A§7§4§E§ls§x§D§6§9§5§4§7§lt§x§C§8§8§3§4§1§le§x§B§B§7§1§3§B§ln §x§A§0§4§D§2§F§lC§x§9§2§3§B§2§9§ll§x§8§5§2§9§2§2§la§x§7§7§1§7§1§C§ln§x§6§A§0§5§1§6§ls §8| §x§6§0§6§0§6§0§lTop")) {
             event.setCancelled(true);
             if (clickedItem != null) {
                 switch (slot) {
-                    case 14:
+                    case 15:
                         if (!clanManager.isClanOwner(uuid)) {
                             library.playLibrarySound(player, CustomSound.NO_PERMISSION, 1f, 2f);
                             return;
@@ -62,7 +62,7 @@ public class ClanMenuInteractions implements Listener {
                         menus.openClanSettings(player);
                         library.playLibrarySound(player, CustomSound.PAGE_TURN, 1f, 2f);
                         break;
-                    case 40:
+                    case 13:
                         if (!clanManager.isClanOwner(uuid)) {
                             library.playLibrarySound(player, CustomSound.NO_PERMISSION, 1f, 2f);
                             return;
@@ -70,7 +70,7 @@ public class ClanMenuInteractions implements Listener {
                         menus.openClanLevel(player);
                         library.playLibrarySound(player, CustomSound.PAGE_TURN, 1f, 2f);
                         break;
-                    case 22:
+                    case 40:
                         menus.openClanBank(player);
                         library.playLibrarySound(player, CustomSound.PAGE_TURN, 1f, 2f);
                         break;
@@ -79,7 +79,9 @@ public class ClanMenuInteractions implements Listener {
                         menus.openClanMemberMenu(player);
                         library.playLibrarySound(player, CustomSound.PAGE_TURN, 1f, 2f);
                         break;
-                    case 13:
+                    case 42:
+                        menus.openTopClans(player);
+                        library.playLibrarySound(player, CustomSound.PAGE_TURN, 1f, 2f);
                         break;
                 }
             }
@@ -190,7 +192,7 @@ public class ClanMenuInteractions implements Listener {
                     break;
 
                 case 31:
-                    if (level < 6) {
+                    if (level < 10) {
                         try {
                             int levelUpCost = getLevelUpCost(level);
                             int currentEco = clanManager.getClanEco(clanPrefix);
@@ -301,7 +303,7 @@ public class ClanMenuInteractions implements Listener {
 
 
                     case 31:
-                        if (clanManager.isClanOwner(player.getUniqueId())) {
+                        if (clanManager.isClanOwner(player.getUniqueId()) || clanManager.hasMemberRank(player.getUniqueId(), clanPrefix, "Vize")) {
                             clanManager.removeMemberFromClan(clanPrefix, memberUUID);
                             player.closeInventory();
                             player.sendMessage("§7Du hast §e" + UUIDFetcher.getName(memberUUID) + " §7aus dem Clan geworfen.");
@@ -318,6 +320,13 @@ public class ClanMenuInteractions implements Listener {
                     case 32:
                         if (clanManager.isClanOwner(player.getUniqueId())) {
                             String currentRank = clanManager.getMemberRank(memberUUID, clanPrefix);
+
+                            if (currentRank.equalsIgnoreCase("Mitglied")) {
+                                player.sendMessage(Main.getInstance().getPrefix() + "§cDer Spieler hat bereits den niedrigsten Rang und kann nicht weiter herabgestuft werden.");
+                                library.playLibrarySound(player, CustomSound.NO_PERMISSION, 1f, 1f);
+                                break;
+                            }
+
                             String downrankRank = getDownrankRank(currentRank);
                             if (downrankRank != null) {
                                 clanManager.setMemberRank(memberUUID, clanPrefix, downrankRank);
@@ -333,11 +342,39 @@ public class ClanMenuInteractions implements Listener {
                             }
                             library.playLibrarySound(player, CustomSound.PAGE_TURN, 1f, 2f);
                             player.removeMetadata("memberUUID", Main.getInstance());
+                        } else if (clanManager.hasMemberRank(player.getUniqueId(), clanPrefix, "Vize")) {
+                            String currentRank = clanManager.getMemberRank(memberUUID, clanPrefix);
+
+                            if (currentRank.equalsIgnoreCase("Mitglied")) {
+                                player.sendMessage(Main.getInstance().getPrefix() + "§cDer Spieler hat bereits den niedrigsten Rang und kann nicht weiter herabgestuft werden.");
+                                library.playLibrarySound(player, CustomSound.NO_PERMISSION, 1f, 1f);
+                                break;
+                            }
+                            if (currentRank.equalsIgnoreCase("Ältester")) {
+                                String downrankRank = getDownrankRank(currentRank);
+                                if (downrankRank != null) {
+                                    clanManager.setMemberRank(memberUUID, clanPrefix, downrankRank);
+                                    player.sendMessage(Main.getInstance().getPrefix() + "§7Du hast §e" + UUIDFetcher.getName(memberUUID) + " §7auf Clan-Rang " + downrankRank
+                                            .replace("Mitglied", "§7Mitglied§r")
+                                            .replace("Ältester", "§6Ältester§r")
+                                            .replace("Vize", "§cVize§r") + " §7herabgestuft.");
+                                    menus.openClanMemberMenu(player);
+                                    library.playLibrarySound(player, CustomSound.PAGE_TURN, 1f, 2f);
+                                    player.removeMetadata("memberUUID", Main.getInstance());
+                                } else {
+                                    player.sendMessage(Main.getInstance().getPrefix() + "§cDer Spieler hat bereits den niedrigsten Rang.");
+                                    library.playLibrarySound(player, CustomSound.NO_PERMISSION, 1f, 1f);
+                                }
+                            } else {
+                                player.sendMessage(Main.getInstance().getPrefix() + "§cDu hast keine Berechtigung, diesen Spieler herabzustufen.");
+                                library.playLibrarySound(player, CustomSound.NO_PERMISSION, 1f, 1f);
+                            }
                         } else {
                             player.sendMessage(Main.getInstance().getPrefix() + "§cDu hast keine Berechtigung, dieses Mitglied herabzustufen.");
                             library.playLibrarySound(player, CustomSound.NO_PERMISSION, 1f, 1f);
                         }
                         break;
+
 
                     case 49:
                         menus.openClanMemberMenu(player);
@@ -345,6 +382,15 @@ public class ClanMenuInteractions implements Listener {
                         break;
 
                 }
+            }
+        }
+        if (title.equals("§x§6§0§6§0§6§0§lClan §8» §x§F§E§C§B§5§A§lB§x§F§1§B§9§5§4§le§x§E§3§A§7§4§E§ls§x§D§6§9§5§4§7§lt§x§C§8§8§3§4§1§le§x§B§B§7§1§3§B§ln §x§A§0§4§D§2§F§lC§x§9§2§3§B§2§9§ll§x§8§5§2§9§2§2§la§x§7§7§1§7§1§C§ln§x§6§A§0§5§1§6§ls §8| §x§6§0§6§0§6§0§lTop")) {
+            event.setCancelled(true);
+            switch (slot) {
+                case 49:
+                    menus.openClanMenu(player);
+                    library.playLibrarySound(player, CustomSound.PAGE_TURN, 1f, 2f);
+                    break;
             }
         }
     }

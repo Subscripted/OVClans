@@ -30,15 +30,29 @@ public class ClanManager {
     final MySQL mySQL;
     final Set<UUID> addingMoney = new HashSet<>();
     final Set<UUID> removingMoney = new HashSet<>();
+    private static final Map<Integer, Integer> levelChunkMap = Map.of(
+            1, 4,
+            2, 0,
+            3, 1,
+            4, 1,
+            5, 3,
+            6, 1,
+            7, 0,
+            8, 0,
+            9, 2,
+            10, 3
+    );
 
 
     @SneakyThrows
     public void createClan(UUID owner, String clanPrefix, String clanName) throws SQLException, ExecutionException, InterruptedException {
-        String createClanQuery = "INSERT INTO Clans (ClanPrefix, ClanName, ClanLevel) VALUES (?, ?, ?)";
+        String createClanQuery = "INSERT INTO Clans (ClanPrefix, ClanName, ClanLevel, Chunks) VALUES (?, ?, ?, ?)";
         try (PreparedStatement stmt = mySQL.getConnection().prepareStatement(createClanQuery)) {
+            int additionalChunks = levelChunkMap.getOrDefault(1, 4);
             stmt.setString(1, clanPrefix);
             stmt.setString(2, clanName);
             stmt.setInt(3, 1);
+            stmt.setInt(4, additionalChunks);
             stmt.executeUpdate();
         }
         addMemberToClan(clanPrefix, owner, "Owner");
@@ -262,7 +276,7 @@ public class ClanManager {
     }
 
     public String getClan(UUID memberUUID) throws SQLException, ExecutionException, InterruptedException {
-        String getClanQuery = "SELECT Clans.ClanPrefix, Clans.ClanName, Clans.OwnerUUID " +
+        String getClanQuery = "SELECT Clans.ClanPrefix, Clans.ClanName " +
                 "FROM Clans JOIN ClanMembers ON Clans.ClanPrefix = ClanMembers.ClanPrefix " +
                 "WHERE ClanMembers.MemberUUID = ?";
         try (PreparedStatement stmt = mySQL.getConnection().prepareStatement(getClanQuery)) {
@@ -291,6 +305,21 @@ public class ClanManager {
         return clans;
     }
 
+    public UUID getClanOwnerUUID(String clanPrefix) throws SQLException {
+        String query = "SELECT MemberUUID FROM ClanMembers WHERE ClanPrefix = ? AND Rank = 'Owner' LIMIT 1";
+
+        try (PreparedStatement stmt = MySQL.getConnection().prepareStatement(query)) {
+            stmt.setString(1, clanPrefix);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return UUID.fromString(rs.getString("MemberUUID"));
+                }
+            }
+        }
+
+        return null; // Falls kein Owner gefunden wird
+    }
+
     public int getClanLevel(String clanPrefix) throws SQLException, ExecutionException, InterruptedException {
         String getLevelQuery = "SELECT ClanLevel FROM Clans WHERE ClanPrefix = ?";
         try (PreparedStatement stmt = mySQL.getConnection().prepareStatement(getLevelQuery)) {
@@ -316,6 +345,34 @@ public class ClanManager {
         return 0;
     }
 
+    public List<Map<String, Object>> getTop5Clans() throws SQLException {
+        List<Map<String, Object>> clanDataList = new ArrayList<>();
+
+        // SQL-Query, um Clans und Mitgliederanzahl zu berechnen
+        String query = """
+        SELECT c.ClanPrefix, c.ClanName, c.ClanLevel, 
+               (SELECT COUNT(*) FROM clanmembers m WHERE m.ClanPrefix = c.ClanPrefix) AS Members
+        FROM clans c
+        ORDER BY c.ClanLevel DESC, Members DESC
+        LIMIT 5
+    """;
+
+        try (PreparedStatement stmt = MySQL.getConnection().prepareStatement(query);
+             ResultSet rs = stmt.executeQuery()) {
+
+            while (rs.next()) {
+                Map<String, Object> clanData = new HashMap<>();
+                clanData.put("ClanPrefix", rs.getString("ClanPrefix"));
+                clanData.put("ClanName", rs.getString("ClanName"));
+                clanData.put("ClanLevel", rs.getInt("ClanLevel"));
+                clanData.put("Members", rs.getInt("Members"));
+                clanDataList.add(clanData);
+            }
+        }
+
+        return clanDataList;
+    }
+
 
     public void setClanEco(String clanPrefix, int newEco) throws
             SQLException, ExecutionException, InterruptedException {
@@ -338,15 +395,24 @@ public class ClanManager {
     }
 
     public void setClanToNextLevel(String clanPrefix) throws SQLException, ExecutionException, InterruptedException {
+        // Aktuelles Level des Clans abrufen
         int currentLevel = getClanLevel(clanPrefix);
         int nextLevel = currentLevel + 1;
-        String updateLevelQuery = "UPDATE Clans SET ClanLevel = ? WHERE ClanPrefix = ?";
-        try (PreparedStatement stmt = mySQL.getConnection().prepareStatement(updateLevelQuery)) {
-            stmt.setInt(1, nextLevel);
-            stmt.setString(2, clanPrefix);
+
+        // Zusätzliche Chunks aus der Map holen
+        int additionalChunks = levelChunkMap.getOrDefault(nextLevel, 0);
+
+        // SQL-Query: Clan-Level erhöhen und zusätzliche Chunks hinzufügen
+        String updateQuery = "UPDATE Clans SET ClanLevel = ?, Chunks = Chunks + ? WHERE ClanPrefix = ?";
+
+        try (PreparedStatement stmt = mySQL.getConnection().prepareStatement(updateQuery)) {
+            stmt.setInt(1, nextLevel);          // Neues Level setzen
+            stmt.setInt(2, additionalChunks);  // Zusätzliche Chunks hinzufügen
+            stmt.setString(3, clanPrefix);     // Clan-Präfix für die Abfrage
             stmt.executeUpdate();
         }
     }
+
 
     public void addMoneyToClanBank(String clanPrefix, int amount) throws
             SQLException, ExecutionException, InterruptedException {
@@ -547,13 +613,14 @@ public class ClanManager {
         return members;
     }
 
-    public static boolean claimChunk(Player player, String clanPrefix) {
+    public boolean claimChunk(Player player, String clanPrefix) {
         Chunk chunk = player.getLocation().getChunk();
         String world = chunk.getWorld().getName();
         int chunkX = chunk.getX();
         int chunkZ = chunk.getZ();
 
-        try (Connection connection = MySQL.getConnection()) {
+        try {
+            // Überprüfen, ob der Chunk bereits geclaimt wurde
             if (ChunkCache.isChunkClaimed(world, chunkX, chunkZ)) {
                 ClanChunk existingClaim = ChunkCache.getClaimedChunk(world, chunkX, chunkZ);
                 if (existingClaim != null) {
@@ -567,7 +634,21 @@ public class ClanManager {
                 }
                 return false;
             }
-            PreparedStatement claimStatement = connection.prepareStatement(
+
+            // Aktuelle Anzahl geclaimter Chunks des Clans abrufen
+            int claimedChunks = getClaimedChunkCount(clanPrefix);
+
+            // Maximale Anzahl an Chunks für den Clan abrufen
+            int maxChunks = getAvailableChunks(clanPrefix);
+
+            // Überprüfen, ob die maximale Anzahl bereits erreicht wurde
+            if (claimedChunks >= maxChunks) {
+                player.sendMessage("Dein Clan hat bereits die maximale Anzahl an geclaimten Chunks erreicht (" + maxChunks + ").");
+                return false;
+            }
+
+            // Chunk claimen
+            PreparedStatement claimStatement = MySQL.getConnection().prepareStatement(
                     "INSERT INTO ClaimedChunks (ClanPrefix, World, ChunkX, ChunkZ) VALUES (?, ?, ?, ?)"
             );
             claimStatement.setString(1, clanPrefix);
@@ -576,6 +657,8 @@ public class ClanManager {
             claimStatement.setInt(4, chunkZ);
 
             claimStatement.executeUpdate();
+
+            // Chunk in den Cache hinzufügen
             ClanChunk clanChunk = new ClanChunk(world, chunkX, chunkZ, clanPrefix);
             ChunkCache.addChunk(clanChunk);
 
@@ -588,6 +671,7 @@ public class ClanManager {
             return false;
         }
     }
+
 
     @SneakyThrows
     public boolean delClaim(Player player, String clanPrefix) {
@@ -735,6 +819,7 @@ public class ClanManager {
         }
         return ranks;
     }
+
     public Map<UUID, String> fetchLastJoinedFromDatabase() {
         Map<UUID, String> lastJoined = new HashMap<>();
         String query = "SELECT MemberUUID, lastSeen FROM ClanMembers";
@@ -776,6 +861,7 @@ public class ClanManager {
         }
         return playerNames;
     }
+
     public List<UUID> fetchAllPlayerUUIDs() {
         List<UUID> uuids = new ArrayList<>();
         String query = "SELECT MemberUUID FROM ClanMembers";
@@ -793,10 +879,76 @@ public class ClanManager {
         return uuids;
     }
 
+    public int getAvailableChunks(String clanPrefix) {
+        String query = "SELECT Chunks FROM Clans WHERE ClanPrefix = ?";
+        try (Connection connection = MySQL.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setString(1, clanPrefix);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return resultSet.getInt("Chunks");
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    public void addChunkCount(String clanPrefix, int amount) {
+        String query = "UPDATE Clans SET Chunks = Chunks + ? WHERE ClanPrefix = ?";
+        try (Connection connection = MySQL.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setInt(1, amount);
+            statement.setString(2, clanPrefix);
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void removeChunkCount(String clanPrefix, int amount) {
+        String query = "UPDATE Clans SET Chunks = GREATEST(Chunks - ?, 0) WHERE ClanPrefix = ?";
+        try (Connection connection = MySQL.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setInt(1, amount);
+            statement.setString(2, clanPrefix);
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void setChunks(String clanPrefix, int amount) {
+        String query = "UPDATE Clans SET Chunks = ? WHERE ClanPrefix = ?";
+        try (Connection connection = MySQL.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setInt(1, amount);
+            statement.setString(2, clanPrefix);
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public int getChunksForNextLevel(int currentLevel) {
+        return levelChunkMap.getOrDefault(currentLevel + 1, 0);
+    }
+
+    private static int getClaimedChunkCount(String clanPrefix) {
+        String query = "SELECT COUNT(*) FROM ClaimedChunks WHERE ClanPrefix = ?";
+        try (PreparedStatement stmt = MySQL.getConnection().prepareStatement(query)) {
+            stmt.setString(1, clanPrefix);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
 
 }
-
-
-
-
-

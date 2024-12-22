@@ -1,4 +1,5 @@
-name: EloriseClans
+name: Clans
+author: §b§lOVL-DevTeam
 version: '1.0-SNAPSHOT'
 main: dev.subscripted.eloriseClans.Main
 api-version: '1.21'
